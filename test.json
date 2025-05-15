@@ -1,0 +1,23 @@
+{
+  'expi': {
+    'projectId': 'bf364d15-c81e-4dba-a61b-ffada7ce6d97',
+    'animation': {
+      '101': {
+        '0010': {
+          '0010': {
+            'name': 'expi01_ep101_sq0010_sh0010',
+            'itemId': '1894d4f2-5eb3-4acc-a053-a3922517ee06'
+          }
+        }
+      },
+      '102': {
+        '0010': {
+          '0010': {
+            'name': 'expi01_ep102_sq0010_sh0010',
+            'itemId': '09e72f87-05f3-44ea-8a79-6dda373a3e30'
+          }
+        }
+      }
+    }
+  }
+}
