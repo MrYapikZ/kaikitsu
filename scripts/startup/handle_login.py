@@ -12,6 +12,10 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
         # Add cookies storage
         self.cookies = None
 
+        # User data
+        self.username = None
+        self.avatarUrl = None
+
         # Load UI
         self.ui = LoginUI()
         self.ui.setupUi(self)
@@ -23,22 +27,28 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
         """Returns the cookies if available"""
         return self.cookies
 
+    def get_userdata(self):
+        """Returns the username if available"""
+        return self.username, self.avatarUrl
+
     def handle_login(self):
         """Handles user login"""
-        email = self.ui.lineEditEmail.text().strip()
+        username = self.ui.lineEditEmail.text().strip()
         password = self.ui.lineEditPassword.text()
 
-        if not email or not password:
+        if not username or not password:
             # self.show_message("Error", "Please enter both email and password.")
-            print("Error: Please enter both email and password.")
+            print("Error: Please enter both username and password.")
             return
 
         try:
-            response, cookies = RequestAPI.authenticate_user(email, password)
+            response, cookies = RequestAPI.authenticate_user(username, password)
 
             if response.get('success'):
                 # self.show_message("Success", "Login successful!")
                 self.cookies = cookies
+                self.username = response.get("user", {}).get("name")
+                self.avatarUrl = response.get("user", {}).get("avatarUrl")
                 print("Success:", response.get('message', 'Login successful!'))
                 self.accept()  # Close login window and return success
             else:

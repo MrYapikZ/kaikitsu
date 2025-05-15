@@ -7,7 +7,7 @@ class RequestAPI:
     @staticmethod
     def authenticate_user(email, password):
         """Make API request to authenticate user"""
-        api_url = "http://expiproject.com/api/v1/launcher/auth/login"
+        api_url = "https://expiproject.com/api/v1/launcher/auth/login"
 
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         payload = {"username": email, "password": password}
@@ -22,12 +22,26 @@ class RequestAPI:
     @staticmethod
     def api_req_logout():
         """Make API request to authenticate user"""
-        api_url = "http://expiproject.com/api/v1/launcher/auth/logout"
+        api_url = "https://expiproject.com/api/v1/launcher/auth/logout"
 
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
         try:
             response = requests.post(api_url, headers=headers)
+            print(f"JSON: {response.json()}")
+            return response.json()
+        except requests.RequestException as e:
+            return {"success": False, "message": f"Network error: {e}"}
+
+    @staticmethod
+    def get_project_list(cookies):
+        """Make API request to authenticate user"""
+        api_url = "https://expiproject.com/api/v1/launcher/projects"
+
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+
+        try:
+            response = requests.get(api_url, headers=headers, cookies=cookies)
             print(f"JSON: {response.json()}")
             return response.json()
         except requests.RequestException as e:

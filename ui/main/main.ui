@@ -238,6 +238,13 @@
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_header">
       <item>
+       <widget class="QLabel" name="label_programName">
+        <property name="text">
+         <string>Expi Launcher</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer_header">
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>
