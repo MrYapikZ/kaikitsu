@@ -3,7 +3,7 @@ import requests
 from io import BytesIO
 from PyQt6.QtCore import Qt, QTimer, QUrl
 from PyQt6.QtGui import QPixmap, QIcon, QDesktopServices
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QListWidgetItem
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from scripts.startup.handle_login import LoginHandler
 from scripts.main.main_script import MainHandler
@@ -65,6 +65,7 @@ class MainUI(QMainWindow):
         self.handle_quickscan_pull()
 
         self.ui.treeWidget_list.itemDoubleClicked.connect(self.tree_item_double_clicked)
+        self.ui.listWidget_version.itemDoubleClicked.connect(self.list_version_double_clicked)
 
 # UI Program ======================================================================================
     def menu_quicksearch(self):
@@ -85,7 +86,8 @@ class MainUI(QMainWindow):
 
         self.ui.comboBox_project.currentTextChanged.connect(self.menu_quicksearch_update_worktype)
         self.ui.comboBox_workType.currentTextChanged.connect(self.menu_quicksearch_update)
-        self.ui.pushButton_qucikScan.clicked.connect(self.handle_quickscan_pull)
+        self.ui.pushButton_quickPull.clicked.connect(self.handle_quickscan_pull)
+        self.ui.pushButton_quickOpen.clicked.connect(self.handle_quickscan_open)
 
     def menu_quicksearch_update_worktype(self):
         self.ui.comboBox_workType.clear()
@@ -212,14 +214,36 @@ class MainUI(QMainWindow):
                                 # if item_id:
                                 #     shot_item.addChild(QTreeWidgetItem(shot_item, [f"Item ID: {item_id}"]))
 
-    def menu_metadata(self,project_id, metadata_id):
+    def menu_metadata(self,project_id, metadata_id, version_id=None, master_id=None):
         self.ui.listWidget_metadataContent.clear()
 
-        metadata_item = self.handle_get_metadata(project_id, metadata_id)
-        metadata = metadata_item.get("metadata", {})
-        # Add each metadata field to the QListWidget
+        if version_id:
+            metadata_item = RequestAPI.get_version(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id, version_id=version_id)
+            metadata = metadata_item.get("version", {})
+        else:
+            metadata_item = RequestAPI.get_metadata(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id)
+            metadata = metadata_item.get("metadata", {})
+            # Add each metadata field to the QListWidget
         for key, value in metadata.items():
             self.ui.listWidget_metadataContent.addItem(f"{key}: {value}")
+
+            self.menu_version(project_id, metadata_id)
+
+    def menu_version(self, project_id, metadata_id):
+        self.ui.listWidget_version.clear()
+        version_list = RequestAPI.get_version_list(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id)
+        version = version_list.get("version", [])
+
+        for item in version:
+            version_id = item.get("id", "")
+            version_number = item.get("version", 0)
+            list_item = QListWidgetItem(f"v{version_number:03}")
+            list_item.setData(Qt.ItemDataRole.UserRole, {
+                "version_id": version_id,
+                "project_id": project_id,
+                "metadata_id": metadata_id
+            })
+            self.ui.listWidget_version.addItem(list_item)
 
     def load_avatar_image(self, url):
         response = requests.get(url)
@@ -274,6 +298,15 @@ class MainUI(QMainWindow):
         except KeyError as e:
             print("Could not locate item ID:", e)
 
+    def list_version_double_clicked(self, item):
+        data = item.data(Qt.ItemDataRole.UserRole)
+        if data:
+            print(f"Version ID: {data['version_id']}")
+            print(f"Project ID: {data['project_id']}")
+            print(f"Metadata ID: {data['metadata_id']}")
+
+            self.menu_metadata(data['project_id'], data['metadata_id'], data['version_id'])
+
     def handle_quickscan_pull(self):
         self.projects_names = self.handle_get_project()
 
@@ -287,12 +320,39 @@ class MainUI(QMainWindow):
         self.menu_quicksearch()
         self.menu_treeview()
 
+    def handle_quickscan_open(self):
+        selected_project = self.ui.comboBox_project.currentText()
+        selected_work_type = self.ui.comboBox_workType.currentText()
+        selected_episode = self.ui.comboBox_episode.currentText()
+        selected_sequence = self.ui.comboBox_sequence.currentText()
+        selected_shot = self.ui.comboBox_shot.currentText()
+
+        invalid_values = {"", "Select Project", "Select Work Type", "Select Episode", "Select Sequence", "Select Shot"}
+
+        if (selected_project in invalid_values or
+                selected_work_type in invalid_values or
+                selected_episode in invalid_values or
+                selected_sequence in invalid_values or
+                selected_shot in invalid_values):
+            print("Invalid selection: Please make sure all fields are selected.")
+        else:
+            project_data = self.json_data_extract.get(selected_project, {})
+            project_id = project_data.get("projectId")
+
+            item_id = None
+            try:
+                item_id = project_data[selected_work_type][selected_episode][selected_sequence][selected_shot]["itemId"]
+            except KeyError:
+                print("Could not find itemId with the current selection.")
+
+            print(f"Project ID: {project_id}")
+            print(f"Item ID: {item_id}")
+
+            self.menu_metadata(project_id, item_id)
+
     def handle_get_project(self):
         self.json_project_list = RequestAPI.get_project_list(cookies=self.cookies)
         return [project['name'] for project in self.json_project_list['projects']]
-
-    def handle_get_metadata(self, project_id, metadata_id):
-        return RequestAPI.get_metadata(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id)
 
     def handle_get_metadata_list(self, project_id, project_name):
         self.json_metadata_list = RequestAPI.get_metadata_list(cookies=self.cookies, project_id=project_id)
