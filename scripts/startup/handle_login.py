@@ -2,7 +2,8 @@ import sys
 import json
 import requests
 from PyQt6.QtWidgets import QWidget, QMessageBox, QDialog
-from ui.prelaunch.login import Ui_Form as LoginUI
+from ui.prelaunch.login_ui import Ui_Form as LoginUI
+from scripts.main.request.api import RequestAPI
 
 class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
     def __init__(self):
@@ -33,7 +34,7 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
             return
 
         try:
-            response, cookies = self.authenticate_user(email, password)
+            response, cookies = RequestAPI.authenticate_user(email, password)
 
             if response.get('success'):
                 # self.show_message("Success", "Login successful!")
@@ -47,25 +48,3 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
         except Exception as e:
             # self.show_message("Error", f"Connection error: {str(e)}")
             print("Error:", f"Connection error: {str(e)}")
-
-    def authenticate_user(self, email, password):
-        """Make API request to authenticate user"""
-        api_url = "http://expiproject.com/api/v1/launcher/auth/login"
-
-        headers = {"Content-Type": "application/json", "Accept": "application/json"}
-        payload = {"username": email, "password": password}
-
-        try:
-            response = requests.post(api_url, headers=headers, json=payload)
-            print(f"JSON: {response.json()}")
-            return response.json(), response.cookies
-        except requests.RequestException as e:
-            return {"success": False, "message": f"Network error: {e}"}
-
-    # def show_message(self, title, message):
-    #     """Display a message box"""
-    #     msg = QMessageBox(self)
-    #     msg.setWindowTitle(title)
-    #     msg.setText(message)
-    #     msg.setIcon(QMessageBox.Icon.Warning if title == "Error" else QMessageBox.Icon.Information)
-    #     msg.exec()
