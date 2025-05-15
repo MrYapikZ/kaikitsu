@@ -59,7 +59,7 @@ class Ui_MainWindow(object):
         self.label_metadata.setObjectName("label_metadata")
         self.verticalLayout_metadata.addWidget(self.label_metadata)
         self.listWidget_metadataContent = QtWidgets.QListWidget(parent=self.centralwidget)
-        self.listWidget_metadataContent.setProperty("isWrapping", True)
+        self.listWidget_metadataContent.setProperty("isWrapping", False)
         self.listWidget_metadataContent.setWordWrap(True)
         self.listWidget_metadataContent.setObjectName("listWidget_metadataContent")
         self.verticalLayout_metadata.addWidget(self.listWidget_metadataContent)

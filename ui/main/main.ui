@@ -114,7 +114,7 @@
           <item>
            <widget class="QListWidget" name="listWidget_metadataContent">
             <property name="isWrapping" stdset="0">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -128,33 +128,40 @@
       <item>
        <layout class="QGridLayout" name="gridLayout_left">
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_quickSearch">
-          <item>
-           <widget class="QLabel" name="label_quickSearch">
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="6" column="0">
+           <widget class="QPushButton" name="pushButton_quickPull">
             <property name="text">
-             <string>Quick Search</string>
+             <string>Pull</string>
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QComboBox" name="comboBox_project"/>
+          <item row="6" column="1">
+           <widget class="QPushButton" name="pushButton_quickOpen">
+            <property name="text">
+             <string>Open</string>
+            </property>
+           </widget>
           </item>
-          <item>
-           <widget class="QComboBox" name="comboBox_workType"/>
-          </item>
-          <item>
-           <widget class="QComboBox" name="comboBox_episode"/>
-          </item>
-          <item>
-           <widget class="QComboBox" name="comboBox_sequence"/>
-          </item>
-          <item>
+          <item row="5" column="0" colspan="2">
            <widget class="QComboBox" name="comboBox_shot"/>
           </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_qucikScan">
+          <item row="4" column="0" colspan="2">
+           <widget class="QComboBox" name="comboBox_sequence"/>
+          </item>
+          <item row="3" column="0" colspan="2">
+           <widget class="QComboBox" name="comboBox_episode"/>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QComboBox" name="comboBox_workType"/>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="QComboBox" name="comboBox_project"/>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="label_quickSearch">
             <property name="text">
-             <string>Scan</string>
+             <string>Quick Search</string>
             </property>
            </widget>
           </item>

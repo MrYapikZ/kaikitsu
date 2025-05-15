@@ -10,7 +10,7 @@ from scripts.main.main_script import MainHandler
 from scripts.main.request.api import RequestAPI
 from ui.main.main_ui import Ui_MainWindow as MainWindowUI
 
-class MainUI(QMainWindow, MainHandler):
+class MainUI(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -82,7 +82,6 @@ class MainUI(QMainWindow, MainHandler):
         self.ui.comboBox_episode.addItem("Select Episode")
         self.ui.comboBox_sequence.addItem("Select Sequence")
         self.ui.comboBox_shot.addItem("Select Shot")
-        print("Update COMBOBOX 01")
 
         self.ui.comboBox_project.currentTextChanged.connect(self.menu_quicksearch_update_worktype)
         self.ui.comboBox_workType.currentTextChanged.connect(self.menu_quicksearch_update)
@@ -109,7 +108,6 @@ class MainUI(QMainWindow, MainHandler):
         self.ui.comboBox_episode.addItem("Select Episode")
         self.ui.comboBox_sequence.addItem("Select Sequence")
         self.ui.comboBox_shot.addItem("Select Shot")
-        print("Update COMBOBOX 02")
 
         selected_project = self.ui.comboBox_project.currentText()
         selected_work_type = self.ui.comboBox_workType.currentText()
@@ -136,7 +134,6 @@ class MainUI(QMainWindow, MainHandler):
                     sequences = project_data[selected_work_type][episode]
                     self.ui.comboBox_sequence.clear()
                     self.ui.comboBox_sequence.addItem("Select Sequence")
-                    print("Update COMBOBOX 03")
                     for seq in sequences:
                         self.ui.comboBox_sequence.addItem(seq)
             except KeyError:
@@ -215,6 +212,15 @@ class MainUI(QMainWindow, MainHandler):
                                 # if item_id:
                                 #     shot_item.addChild(QTreeWidgetItem(shot_item, [f"Item ID: {item_id}"]))
 
+    def menu_metadata(self,project_id, metadata_id):
+        self.ui.listWidget_metadataContent.clear()
+
+        metadata_item = self.handle_get_metadata(project_id, metadata_id)
+        metadata = metadata_item.get("metadata", {})
+        # Add each metadata field to the QListWidget
+        for key, value in metadata.items():
+            self.ui.listWidget_metadataContent.addItem(f"{key}: {value}")
+
     def load_avatar_image(self, url):
         response = requests.get(url)
         response.raise_for_status()
@@ -244,6 +250,8 @@ class MainUI(QMainWindow, MainHandler):
         project = names[0]
         work_type = names[1]
 
+        project_id = self.json_data_extract.get(project, {}).get("projectId", "Unknown")
+
         try:
             if work_type == "assets":
                 # Structure: project > assets > asset_type > asset_name
@@ -260,7 +268,9 @@ class MainUI(QMainWindow, MainHandler):
                     shot = names[4].replace("sh", "")
                     name = names[5]
                     item_id = self.json_data_extract[project][work_type][episode][sequence][shot]['itemId']
-                    print(f"[{work_type.title()}] Name: {name} | Item ID: {item_id}")
+                    print(f"[{work_type.title()}] Name: {name} | Item ID: {item_id} | Project ID: {project_id}")
+
+                    self.menu_metadata(project_id, item_id)
         except KeyError as e:
             print("Could not locate item ID:", e)
 
@@ -270,7 +280,7 @@ class MainUI(QMainWindow, MainHandler):
         # selected_project = self.ui.comboBox_project.currentText()
         for project in self.json_project_list.get("projects", []):
             # if project["name"] == selected_project:
-            self.json_data_extract = self.handle_get_metadata(project["id"], project["name"])
+            self.json_data_extract = self.handle_get_metadata_list(project["id"], project["name"])
 
 
         print ("Project Names:", self.projects_names)
@@ -278,11 +288,14 @@ class MainUI(QMainWindow, MainHandler):
         self.menu_treeview()
 
     def handle_get_project(self):
-        self.json_project_list = self.get_project_list(cookies=self.cookies)
+        self.json_project_list = RequestAPI.get_project_list(cookies=self.cookies)
         return [project['name'] for project in self.json_project_list['projects']]
 
-    def handle_get_metadata(self, project_id, project_name):
-        self.json_metadata_list = self.get_metadata_list(cookies=self.cookies, project_id=project_id)
+    def handle_get_metadata(self, project_id, metadata_id):
+        return RequestAPI.get_metadata(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id)
+
+    def handle_get_metadata_list(self, project_id, project_name):
+        self.json_metadata_list = RequestAPI.get_metadata_list(cookies=self.cookies, project_id=project_id)
         return self.handle_extract_metadata(self.json_metadata_list, project_name, project_id, existing=self.json_data_extract)
 
     def handle_extract_metadata(self, metadata_list, project_name, project_id, existing=None):
