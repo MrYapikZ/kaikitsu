@@ -9,12 +9,8 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
     def __init__(self):
         super().__init__()
 
-        # Add cookies storage
-        self.cookies = None
-
         # User data
         self.username = None
-        self.avatarUrl = None
 
         # Load UI
         self.ui = LoginUI()
@@ -29,14 +25,6 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
         msg_box.setWindowTitle(title)
         msg_box.setText(message)
         msg_box.exec()
-
-    def get_cookies(self):
-        """Returns the cookies if available"""
-        return self.cookies
-
-    def get_userdata(self):
-        """Returns the username if available"""
-        return self.username, self.avatarUrl
 
     def handle_login(self):
         """Handles user login"""
@@ -54,21 +42,14 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
         AppState().set_url_data(kiyokai_url=kiyokai_url, zou_url=zou_url)
 
         try:
-            response, cookies = AuthServices.authenticate_user(username, password)
+            response = AuthServices.authenticate_user(username, password)
 
-            if response.get('login'):
+            if response.get('success'):
                 # self.show_message("Success", "Login successful!")
                 user_data = response.get("user", {})
-                self.cookies = cookies
                 self.username = user_data.get("full_name") or user_data.get("name") or username
-                self.avatarUrl = user_data.get("avatarUrl", "")
 
                 # Store Data
-                app_state.set_login_data(
-                    cookies=cookies,
-                    username=self.username,
-                    avatar_url=self.avatarUrl
-                )
                 app_state.set_access_token(response.get("access_token"))
                 app_state.set_user_data(user_data)
 

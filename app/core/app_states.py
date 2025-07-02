@@ -1,3 +1,5 @@
+from app.core.gazu_client import gazu_client
+
 class AppState:
     _instance = None
 
@@ -19,17 +21,13 @@ class AppState:
     def set_url_data(self, zou_url, kiyokai_url):
         self.zou_url = zou_url
         self.kiyokai_url = kiyokai_url
+        gazu_client.set_host(self.zou_url)
 
     def set_user_data(self, user_data):
         self.user_data = user_data
 
     def set_access_token(self, access_token):
         self.access_token = access_token
-
-    def set_login_data(self, cookies, username, avatar_url):
-        self.cookies = cookies
-        self.username = username
-        self.avatar_url = avatar_url
 
     def is_logged_in(self):
         return self.cookies is not None

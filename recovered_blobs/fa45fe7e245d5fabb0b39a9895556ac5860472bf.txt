@@ -1,0 +1,5 @@
+from app.services.auth import AuthServices
+
+class MainHandler(AuthServices):
+    def __init__(self):
+        super().__init__()

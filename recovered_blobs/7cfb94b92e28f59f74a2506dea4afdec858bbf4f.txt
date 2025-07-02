@@ -1,0 +1,5 @@
+from app.scripts.main.request.api import RequestAPI
+
+class MainHandler(RequestAPI):
+    def __init__(self):
+        super().__init__()
