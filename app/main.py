@@ -1,14 +1,13 @@
 import sys
 import requests
 from io import BytesIO
-from PyQt6.QtCore import Qt, QTimer, QUrl
-from PyQt6.QtGui import QPixmap, QIcon, QDesktopServices
+from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtGui import QPixmap, QDesktopServices
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QListWidgetItem
-from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
-from scripts.startup.handle_login import LoginHandler
-from scripts.main.main_script import MainHandler
-from scripts.main.request.api import RequestAPI
-from ui.main.main_ui import Ui_MainWindow as MainWindowUI
+
+from app.modules.startup.handle_login import LoginHandler
+from app.services.auth import AuthServices
+from app.ui.main.main_ui_old import Ui_MainWindow as MainWindowUI
 
 class MainUI(QMainWindow):
     def __init__(self):
@@ -218,10 +217,10 @@ class MainUI(QMainWindow):
         self.ui.listWidget_metadataContent.clear()
 
         if version_id:
-            metadata_item = RequestAPI.get_version(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id, version_id=version_id)
+            metadata_item = AuthServices.get_version(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id, version_id=version_id)
             metadata = metadata_item.get("version", {})
         else:
-            metadata_item = RequestAPI.get_metadata(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id)
+            metadata_item = AuthServices.get_metadata(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id)
             metadata = metadata_item.get("metadata", {})
             # Add each metadata field to the QListWidget
         for key, value in metadata.items():
@@ -231,7 +230,7 @@ class MainUI(QMainWindow):
 
     def menu_version(self, project_id, metadata_id):
         self.ui.listWidget_version.clear()
-        version_list = RequestAPI.get_version_list(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id)
+        version_list = AuthServices.get_version_list(cookies=self.cookies, project_id=project_id, metadata_id=metadata_id)
         version = version_list.get("version", [])
 
         for item in version:
@@ -351,11 +350,11 @@ class MainUI(QMainWindow):
             self.menu_metadata(project_id, item_id)
 
     def handle_get_project(self):
-        self.json_project_list = RequestAPI.get_project_list(cookies=self.cookies)
+        self.json_project_list = AuthServices.get_project_list(cookies=self.cookies)
         return [project['name'] for project in self.json_project_list['projects']]
 
     def handle_get_metadata_list(self, project_id, project_name):
-        self.json_metadata_list = RequestAPI.get_metadata_list(cookies=self.cookies, project_id=project_id)
+        self.json_metadata_list = AuthServices.get_metadata_list(cookies=self.cookies, project_id=project_id)
         return self.handle_extract_metadata(self.json_metadata_list, project_name, project_id, existing=self.json_data_extract)
 
     def handle_extract_metadata(self, metadata_list, project_name, project_id, existing=None):

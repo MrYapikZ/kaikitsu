@@ -1,0 +1,88 @@
+from PyQt6.QtWidgets import QDialog, QMessageBox
+from app.ui.startup.login_ui import Ui_Form as LoginUI
+from app.services.auth import AuthServices
+from app.core.app_states import AppState
+
+app_state = AppState()
+
+class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
+    def __init__(self):
+        super().__init__()
+
+        # Add cookies storage
+        self.cookies = None
+
+        # User data
+        self.username = None
+        self.avatarUrl = None
+
+        # Load UI
+        self.ui = LoginUI()
+        self.ui.setupUi(self)
+
+        # Connect login button
+        self.ui.pushButtonLogIn.clicked.connect(self.handle_login)
+
+    def show_message(self, title: str, message: str, icon: QMessageBox.Icon = QMessageBox.Icon.Information):
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(icon)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.exec()
+
+    def get_cookies(self):
+        """Returns the cookies if available"""
+        return self.cookies
+
+    def get_userdata(self):
+        """Returns the username if available"""
+        return self.username, self.avatarUrl
+
+    def handle_login(self):
+        """Handles user login"""
+        username = self.ui.lineEditEmail.text().strip()
+        password = self.ui.lineEditPassword.text()
+        kiyokai_url = self.ui.lineEditKiyokai.text()
+        zou_url = self.ui.lineEditZou.text()
+
+        if not username or not password or not kiyokai_url or not zou_url:
+            # self.show_message("Error", "Please enter both email and password.")
+            print("[-] Error: Please enter kiyokai url, zou url, username and password.")
+            self.show_message("Input Error", "Please enter all required fields.", QMessageBox.Icon.Warning)
+            return
+
+        AppState().set_url_data(kiyokai_url=kiyokai_url, zou_url=zou_url)
+
+        try:
+            response, cookies = AuthServices.authenticate_user(username, password)
+
+            if response.get('login'):
+                # self.show_message("Success", "Login successful!")
+                user_data = response.get("user", {})
+                self.cookies = cookies
+                self.username = user_data.get("full_name") or user_data.get("name") or username
+                self.avatarUrl = user_data.get("avatarUrl", "")
+
+                # Store Data
+                app_state.set_login_data(
+                    cookies=cookies,
+                    username=self.username,
+                    avatar_url=self.avatarUrl
+                )
+                app_state.set_access_token(response.get("access_token"))
+                app_state.set_user_data(user_data)
+
+                # Response
+                print("Success:", response.get('message', '[+] Login successful!'))
+                self.show_message("Login Success", f"Welcome, {self.username}!", QMessageBox.Icon.Information)
+                self.accept()  # Close login window and return success
+            else:
+                # self.show_message("Error", response.get('message', 'Login failed. Please try again.'))
+                print("Error:", response.get('message', '[-] Login failed. Please try again.'))
+                self.show_message("Login Failed", response.get("message", "Login failed."), QMessageBox.Icon.Critical)
+
+
+        except Exception as e:
+            # self.show_message("Error", f"Connection error: {str(e)}")
+            print("Error:", f"[-] Connection error: {str(e)}")
+            self.show_message("Connection Error", str(e), QMessageBox.Icon.Critical)

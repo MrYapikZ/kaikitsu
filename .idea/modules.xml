@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/launcher-python.iml" filepath="$PROJECT_DIR$/.idea/launcher-python.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/kaikitsu.iml" filepath="$PROJECT_DIR$/.idea/kaikitsu.iml" />
     </modules>
   </component>
 </project>
