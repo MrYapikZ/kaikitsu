@@ -5,24 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="77f50ed9-92ad-41b4-bea7-148098f47ee0" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/modules/main/handle_launcher.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/services/project.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/ui/main/main.ui" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/launcher-python.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kaikitsu.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/main/generate_tree.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/core/app_states.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/main/main_script.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/main/request/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/auth.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/startup/handle_login.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/modules/startup/handle_login.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/main/main.ui" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/main/main_ui.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/main/main_ui_old.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/prelaunch/login.ui" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/startup/login.ui" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/prelaunch/login_ui.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/startup/login_ui_old.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dictionaries/project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/__test__/load_avatar_url.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/modules/main/handle_launcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/modules/main/handle_launcher.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/modules/startup/handle_login.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/modules/startup/handle_login.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/ui/startup/login.ui" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/startup/login.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/ui/startup/login_ui.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/startup/login_ui.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,9 +31,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 8
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
   <component name="ProjectId" id="2zHYaTcmdlClDgaqhVfTXxeqfuQ" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -53,6 +45,7 @@
     "Python.main.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",

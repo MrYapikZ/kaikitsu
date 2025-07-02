@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import QDialog, QMessageBox
+
+from app.config import Settings
 from app.ui.startup.login_ui import Ui_Form as LoginUI
 from app.services.auth import AuthServices
 from app.core.app_states import AppState
-
-app_state = AppState()
 
 class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
     def __init__(self):
@@ -15,6 +15,7 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
         # Load UI
         self.ui = LoginUI()
         self.ui.setupUi(self)
+        self.ui.labelTitle.setText(Settings.APP_NAME)
 
         # Connect login button
         self.ui.pushButtonLogIn.clicked.connect(self.handle_login)
@@ -50,8 +51,8 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
                 self.username = user_data.get("full_name") or user_data.get("name") or username
 
                 # Store Data
-                app_state.set_access_token(response.get("access_token"))
-                app_state.set_user_data(user_data)
+                AppState().set_access_token(response.get("access_token"))
+                AppState().set_user_data(user_data)
 
                 # Response
                 print("Success:", response.get('message', '[+] Login successful!'))

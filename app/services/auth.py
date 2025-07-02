@@ -5,8 +5,6 @@ from app.config import Settings
 
 logger = logging.getLogger(__name__)
 
-states = AppState()
-
 class AuthServices:
     def __init__(self):
         super().__init__()

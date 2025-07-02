@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui/startup/login.ui'
+# Form implementation generated from reading ui file 'app/ui/startup/login.ui'
 #
 # Created by: PyQt6 UI code generator 6.8.1
 #
@@ -117,7 +117,7 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.labelTitle.setText(_translate("Form", "Expi Booth"))
+        self.labelTitle.setText(_translate("Form", "Kaikitsu"))
         self.labelKiyokai.setText(_translate("Form", "Kiyokai"))
         self.labelZou.setText(_translate("Form", "Zou"))
         self.labelEmail.setText(_translate("Form", "Email"))
