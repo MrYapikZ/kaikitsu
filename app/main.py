@@ -21,6 +21,7 @@ class MainUI(QMainWindow):
         # Instantiate and set up UI
         self.ui = MainWindowUI()
         self.ui.setupUi(self)
+        self.setWindowTitle(f"{Settings.APP_NAME} - {Settings.BUILD_VERSION}")
 
         if self.prelaunch():  # returns True on successful login
             self.load_ui()

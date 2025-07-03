@@ -15,6 +15,7 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
         # Load UI
         self.ui = LoginUI()
         self.ui.setupUi(self)
+        self.setWindowTitle("Login - " + Settings.APP_NAME)
         self.ui.labelTitle.setText(Settings.APP_NAME)
 
         # Connect login button
