@@ -1,9 +1,10 @@
 import logging
 from app.core.app_states import AppState
+from app.core.logger import get_logger
 from app.core.gazu_client import gazu_client
 from app.config import Settings
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class TaskService:
     def __init__(self):
