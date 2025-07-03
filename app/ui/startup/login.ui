@@ -106,22 +106,6 @@ color: white;
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="widgetZou" native="true">
-        <layout class="QVBoxLayout" name="verticalLayout_5">
-         <item>
-          <widget class="QLabel" name="labelZou">
-           <property name="text">
-            <string>Zou</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="lineEditZou"/>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
        <widget class="QWidget" name="widgetEmail" native="true">
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
@@ -162,6 +146,12 @@ color: white;
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
           <widget class="QPushButton" name="pushButtonLogIn">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>24</height>
+            </size>
+           </property>
            <property name="text">
             <string>Log In</string>
            </property>

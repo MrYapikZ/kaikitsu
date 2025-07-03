@@ -1,4 +1,5 @@
 from app.core.gazu_client import gazu_client
+from app.services.zou import ZouService
 
 class AppState:
     _instance = None
@@ -18,10 +19,12 @@ class AppState:
             cls._instance.avatar_url = None
         return cls._instance
 
-    def set_url_data(self, zou_url, kiyokai_url):
-        self.zou_url = zou_url
+    def set_kiyokai_url(self, kiyokai_url):
         self.kiyokai_url = kiyokai_url
-        gazu_client.set_host(self.zou_url)
+        response = ZouService.get_zou_url(self.kiyokai_url)
+        if response.get('success'):
+            self.zou_url = response.get("url")
+            gazu_client.set_host(self.zou_url)
 
     def set_user_data(self, user_data):
         self.user_data = user_data

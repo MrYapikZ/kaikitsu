@@ -32,15 +32,20 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
         username = self.ui.lineEditEmail.text().strip()
         password = self.ui.lineEditPassword.text()
         kiyokai_url = self.ui.lineEditKiyokai.text()
-        zou_url = self.ui.lineEditZou.text()
 
-        if not username or not password or not kiyokai_url or not zou_url:
+        if not username or not password or not kiyokai_url:
             # self.show_message("Error", "Please enter both email and password.")
-            print("[-] Error: Please enter kiyokai url, zou url, username and password.")
+            print("[-] Error: Please enter kiyokai url, username and password.")
             self.show_message("Input Error", "Please enter all required fields.", QMessageBox.Icon.Warning)
             return
 
-        AppState().set_url_data(kiyokai_url=kiyokai_url, zou_url=zou_url)
+        AppState().set_kiyokai_url(kiyokai_url=kiyokai_url)
+
+        if AppState().zou_url is None:
+            # self.show_message("Error", "Invalid Kiyokai URL. Please check the URL and try again.")
+            print("[-] Error: Invalid Kiyokai URL. Please check the URL and try again.")
+            self.show_message("Kiyokai URL Error", "Zou URL not found. Please check the URL and try again.", QMessageBox.Icon.Warning)
+            return
 
         try:
             response = AuthServices.authenticate_user(username, password)

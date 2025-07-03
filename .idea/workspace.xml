@@ -5,13 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="77f50ed9-92ad-41b4-bea7-148098f47ee0" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/modules/main/handle_dashboard.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/services/task.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/services/zou.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/ui/main/main.ui" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/main/main.ui" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/ui/main/main_ui.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/main/main_ui.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.json" beforeDir="false" afterPath="$PROJECT_DIR$/test.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/core/app_states.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/core/app_states.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/modules/startup/handle_login.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/modules/startup/handle_login.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/ui/startup/login.ui" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/startup/login.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/ui/startup/login_ui.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/ui/startup/login_ui.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

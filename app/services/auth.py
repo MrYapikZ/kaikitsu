@@ -17,7 +17,7 @@ class AuthServices:
         try:
             user = gazu_client.log_in(email, password)
 
-            if user and "login" in user:
+            if user and user.get("login") is True:
                 Settings.SESSION_FILE = user
                 gazu_client.files.download_person_avatar(user["user"]["id"], file_path=Settings.AVATAR_FILE)
 
