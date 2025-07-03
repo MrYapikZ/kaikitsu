@@ -1,0 +1,53 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+#*.py[cod]
+#*$py.class
+
+# Qt Designer generated Python files (if using .ui)
+#*.py~
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Logs and dumps
+*.log
+
+# macOS
+.DS_Store
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS and miscellaneous
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+.env/
+.ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# PyInstaller
+*.spec
+output/
+
+# Custom files
+test.json
