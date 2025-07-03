@@ -8,7 +8,9 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QListWid
 
 from app.config import Settings
 from app.modules.startup.handle_login import LoginHandler
+from app.modules.main.handle_dashboard import DashboardHandler
 from app.services.auth import AuthServices
+from app.services.task import TaskService
 from app.ui.main.main_ui import Ui_MainWindow as MainWindowUI
 from app.core.app_states import AppState
 
@@ -35,6 +37,7 @@ class MainUI(QMainWindow):
         return False
 
     def load_ui(self):
+        # Load main UI components
         self.ui.label_programName.setText(Settings.APP_NAME)
         self.ui.pushButton_logOut.clicked.connect(self.handle_logout)
         self.ui.label_credit.mouseDoubleClickEvent = self.open_website
@@ -43,6 +46,11 @@ class MainUI(QMainWindow):
         self.ui.label_username.setText(AppState().user_data["user"]["full_name"] or AppState().user_data["user"]["email"])
         if AppState().user_data["user"]["has_avatar"] and os.path.exists(Settings.AVATAR_FILE):
             self.load_avatar_image(f"{Settings.AVATAR_FILE}")
+
+        # Set up tabs
+        self.ui.tabWidget.addTab(DashboardHandler(), "Dashboard")
+
+        TaskService().get_task_list()
 
 # PyQt Program =====================================================================================
     def open_website(self, event):
