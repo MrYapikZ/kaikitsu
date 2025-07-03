@@ -14,6 +14,8 @@ class AppState:
             cls.access_token = None
             cls.user_data = None
 
+            cls.task_data = None
+
             cls._instance.cookies = None
             cls._instance.username = None
             cls._instance.avatar_url = None
@@ -31,6 +33,9 @@ class AppState:
 
     def set_access_token(self, access_token):
         self.access_token = access_token
+
+    def set_task_data(self, task_data):
+        self.task_data = task_data
 
     def is_logged_in(self):
         return self.cookies is not None

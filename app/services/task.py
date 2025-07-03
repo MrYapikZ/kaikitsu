@@ -1,4 +1,6 @@
 import logging
+import os.path
+
 from app.core.app_states import AppState
 from app.core.logger import get_logger
 from app.core.gazu_client import gazu_client
@@ -40,6 +42,12 @@ class TaskService:
                 last_comment = task.get("last_comment", {})
 
                 user = gazu_client.person.get_person(last_comment.get("person_id"))
+                print(f"User: {user}")
+                avatar_path = None
+                if user["has_avatar"]:
+                    os.makedirs(os.path.join(Settings.FILES_DIR, "avatar"), exist_ok=True)
+                    avatar_path = os.path.join(Settings.FILES_DIR, "avatar", f"{user['id']}.png")
+                    user["avatar_path"] = gazu_client.files.download_person_avatar(user["id"], file_path=avatar_path)
 
                 extracted_data.append({
                     "id": task.get("id"),
@@ -52,8 +60,10 @@ class TaskService:
                     "entity_type_name": task.get("entity_type_name"),
                     "due_date": task.get("due_date"),
                     "priority": task.get("priority"),
-                    "last_comment_text": last_comment.get("text"),
                     "last_comment_person_full_name": user.get("full_name"),
+                    "last_comment_text": last_comment.get("text"),
+                    "last_comment_person_avatar_path": avatar_path,
+                    "entity_preview_file_id": task.get("entity_preview_file_id"),
                 })
 
             logger.info(f"Table Task List: {extracted_data}")
