@@ -50,7 +50,7 @@ class MainUI(QMainWindow):
         # Set up tabs
         self.ui.tabWidget.addTab(DashboardHandler(), "Dashboard")
 
-        TaskService().get_task_list()
+        TaskService().get_table_task_list()
 
 # PyQt Program =====================================================================================
     def open_website(self, event):
