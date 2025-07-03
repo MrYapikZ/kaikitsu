@@ -16,7 +16,6 @@ class TaskService:
         try:
             response = gazu_client.user.all_tasks_to_do()
             logger.info(f"Task List: {response}")
-            print(f"JSON: {response}")
             return response
         except Exception as e:
             logger.error(f"Network error: {e}")

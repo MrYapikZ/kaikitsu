@@ -60,16 +60,16 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
                 AppState().set_user_data(user_data)
 
                 # Response
-                print("Success:", response.get('message', '[+] Login successful!'))
+                print("[+] Success:", response.get('message', '[+] Login successful!'))
                 self.show_message("Login Success", f"Welcome, {self.username}!", QMessageBox.Icon.Information)
                 self.accept()  # Close login window and return success
             else:
                 # self.show_message("Error", response.get('message', 'Login failed. Please try again.'))
-                print("Error:", response.get('message', '[-] Login failed. Please try again.'))
+                print("[-] Error:", response.get('message', '[-] Login failed. Please try again.'))
                 self.show_message("Login Failed", response.get("message", "Login failed."), QMessageBox.Icon.Critical)
 
 
         except Exception as e:
             # self.show_message("Error", f"Connection error: {str(e)}")
-            print("Error:", f"[-] Connection error: {str(e)}")
+            print("[-] Error:", f"[-] Connection error: {str(e)}")
             self.show_message("Connection Error", str(e), QMessageBox.Icon.Critical)

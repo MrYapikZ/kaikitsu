@@ -33,7 +33,6 @@ class LauncherHandler(QWidget):
 
         self.ui.label_username.setText(self.username)
         self.load_avatar_image(self.avatarUrl)
-        print(self.avatarUrl)
 
         self.ui.pushButton_logOut.clicked.connect(self.handle_logout)
         self.ui.label_credit.mouseDoubleClickEvent = self.open_website

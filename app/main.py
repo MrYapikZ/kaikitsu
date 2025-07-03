@@ -59,7 +59,7 @@ class MainUI(QMainWindow):
 
     def handle_logout(self):
         # Logic for handling logout
-        print("Logging out...")
+        print("[!] Logging out...")
         AuthServices.api_req_logout()
 
         # Re-init login flow
@@ -76,7 +76,7 @@ class MainUI(QMainWindow):
             self.ui.label_userimage.setFixedSize(25, 25)
             self.ui.label_userimage.setScaledContents(True)
         else:
-            print(f"Failed to load avatar image from: {file_path}")
+            print(f"[-] Failed to load avatar image from: {file_path}")
 
 if __name__== "__main__":
     app = QApplication(sys.argv)
