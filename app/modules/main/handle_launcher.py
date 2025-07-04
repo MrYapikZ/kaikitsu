@@ -87,23 +87,35 @@ class LauncherHandler(QWidget):
     def set_combobox_data(self):
         """Set data for a combo box"""
 
-        # Setup combo box awal
+        # Clear comboBox
         self.ui.comboBox_project.clear()
+        self.ui.comboBox_task.clear()
         self.ui.comboBox_episode.clear()
         self.ui.comboBox_sequence.clear()
         self.ui.comboBox_shot.clear()
+        self.ui.comboBox_asset.clear()
 
-        # Isi project list
+        # Fill project list
         for project in self.project_data:
             self.ui.comboBox_project.addItem(project["project"], project["project_id"])
 
-        # Matikan semua selain project
-        self.ui.comboBox_episode.setEnabled(False)
+        # Disable all except project
         self.ui.comboBox_task.setEnabled(False)
+        self.ui.comboBox_episode.setEnabled(False)
         self.ui.comboBox_sequence.setEnabled(False)
         self.ui.comboBox_shot.setEnabled(False)
+        self.ui.comboBox_asset.setEnabled(False)
+
+        # Hide all except project
+        self.ui.comboBox_task.hide()
+        self.ui.comboBox_episode.hide()
+        self.ui.comboBox_sequence.hide()
+        self.ui.comboBox_shot.hide()
+        self.ui.comboBox_asset.hide()
+
 
         # Connect signals
+        self.ui.comboBox_task.currentIndexChanged.connect(self.on_task_changed)
         self.ui.comboBox_project.currentIndexChanged.connect(self.on_project_changed)
         self.ui.comboBox_episode.currentIndexChanged.connect(self.on_episode_changed)
         self.ui.comboBox_sequence.currentIndexChanged.connect(self.on_sequence_changed)
@@ -120,20 +132,75 @@ class LauncherHandler(QWidget):
         project_id = self.ui.comboBox_project.itemData(index)
         project = next((p for p in self.project_data if p["project_id"] == project_id), None)
 
-        if project and project.get("episodes"):
-            self.ui.comboBox_episode.setEnabled(True)
-            for episode in project["episodes"]:
-                self.ui.comboBox_episode.addItem(episode["episode"], episode["episode_id"])
-        else:
-            self.ui.comboBox_episode.setEnabled(False)
-
         if project and project.get("tasks"):
             self.ui.comboBox_task.setEnabled(True)
+            self.ui.comboBox_task.show()
+
             for task in project["tasks"]:
                 self.ui.comboBox_task.addItem(task["name"], task["id"])
         else:
             self.ui.comboBox_task.setEnabled(False)
 
+    def on_task_changed(self, index):
+        self.ui.comboBox_asset.clear()
+        self.ui.comboBox_episode.clear()
+        self.ui.comboBox_sequence.clear()
+        self.ui.comboBox_shot.clear()
+
+        # Get project_id from comboBox_project
+        project_index = self.ui.comboBox_project.currentIndex()
+        project_id = self.ui.comboBox_project.itemData(project_index)
+        task_id = self.ui.comboBox_task.itemData(index)
+
+        # Get data project and task
+        project = next((p for p in self.project_data if p["project_id"] == project_id), None)
+        task = next((t for t in project["tasks"] if t["id"] == task_id), None) if project else None
+
+        if not task:
+            return
+
+        entity = task.get("for_entity", "").lower()
+
+        if entity == "asset":
+            # Show combo asset
+            self.ui.comboBox_asset.show()
+            self.ui.comboBox_asset.setEnabled(True)
+
+            # Hide episode, sequence, and shot
+            self.ui.comboBox_episode.hide()
+            self.ui.comboBox_sequence.hide()
+            self.ui.comboBox_shot.hide()
+
+            self.ui.comboBox_episode.setEnabled(False)
+            self.ui.comboBox_sequence.setEnabled(False)
+            self.ui.comboBox_shot.setEnabled(False)
+
+            # Fill asset if exist
+            if project and project.get("assets"):
+                for asset in project["assets"]:
+                    self.ui.comboBox_asset.addItem(asset["name"], asset["id"])
+            else:
+                self.ui.comboBox_asset.setEnabled(False)
+
+        elif entity == "shot":
+            # Show episode, sequence, shot
+            self.ui.comboBox_episode.show()
+            self.ui.comboBox_sequence.show()
+            self.ui.comboBox_shot.show()
+
+            self.ui.comboBox_asset.hide()
+            self.ui.comboBox_asset.setEnabled(False)
+
+            self.ui.comboBox_episode.setEnabled(True)
+            self.ui.comboBox_sequence.setEnabled(False)
+            self.ui.comboBox_shot.setEnabled(False)
+
+            # Fill episode if exist
+            if project and project.get("episodes"):
+                for episode in project["episodes"]:
+                    self.ui.comboBox_episode.addItem(episode["episode"], episode["episode_id"])
+            else:
+                self.ui.comboBox_episode.setEnabled(False)
 
     def on_episode_changed(self, index):
         self.ui.comboBox_sequence.clear()
