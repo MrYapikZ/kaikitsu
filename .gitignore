@@ -12,6 +12,8 @@ dist/
 *.spec
 
 # Logs and dumps
+log/
+logs/
 *.log
 
 # macOS

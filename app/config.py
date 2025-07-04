@@ -16,6 +16,7 @@ def get_config_dir(app_name="myapp") -> str:
 class Settings:
     APP_NAME = "Kaikitsu"
     BUILD_VERSION = "v0.0.1"
+
     CONFIG_DIR = get_config_dir(APP_NAME)
     SESSION_FILE = os.path.join(CONFIG_DIR, "user", "gazu_session.json")
     FILES_DIR = os.path.join(CONFIG_DIR, "files")

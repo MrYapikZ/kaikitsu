@@ -42,7 +42,6 @@ class TaskService:
                 last_comment = task.get("last_comment", {})
 
                 user = gazu_client.person.get_person(last_comment.get("person_id"))
-                print(f"User: {user}")
                 avatar_path = None
                 if user["has_avatar"]:
                     os.makedirs(os.path.join(Settings.FILES_DIR, "avatar"), exist_ok=True)

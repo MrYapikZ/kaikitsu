@@ -39,12 +39,11 @@ class DashboardHandler(QWidget):
             model.setHorizontalHeaderLabels(headers)
 
             if not self.tasks:
-                print("No tasks found.")
+                print("[-] No tasks found.")
                 self.ui.tableView_task.setModel(model)
                 return
 
             for index, task in enumerate(self.tasks):
-                print(task)
                 if task.get("episode_name") and task.get("sequence_name"):
                     entity = f"{task.get('entity_type_name', '')} / {task.get('episode_name', '')} / {task.get('sequence_name', '')} / {task.get('entity_name', '')}"
                 else:
@@ -106,7 +105,7 @@ class DashboardHandler(QWidget):
             task_data = next((task for task in self.tasks if task["id"] == task_id), None)
 
             if not task_data:
-                print(f"No task found with ID: {task_id}")
+                print(f"[-] No task found with ID: {task_id}")
                 return
 
             model = QStandardItemModel()

@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QListWid
 
 from app.config import Settings
 from app.modules.startup.handle_login import LoginHandler
+from app.modules.main.handle_launcher import LauncherHandler
 from app.modules.main.handle_dashboard import DashboardHandler
 from app.services.auth import AuthServices
 from app.services.task import TaskService
@@ -50,6 +51,7 @@ class MainUI(QMainWindow):
 
         # Set up tabs
         self.ui.tabWidget.addTab(DashboardHandler(), "Dashboard")
+        self.ui.tabWidget.addTab(LauncherHandler(), "Launcher")
 
         TaskService().get_table_task_list()
 
