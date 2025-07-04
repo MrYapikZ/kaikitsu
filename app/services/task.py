@@ -13,7 +13,7 @@ class TaskService:
         super().__init__()
 
     @staticmethod
-    def get_task_list(user_id: str = None):
+    def get_tasks_by_user():
         """Make API request to get task list for a project"""
 
         try:
@@ -79,6 +79,18 @@ class TaskService:
         try:
             response = gazu_client.task.get_last_comment_for_task(task_id)
             logger.info(f"Task Comments: {response}")
+            return response
+        except Exception as e:
+            logger.error(f"Network error: {e}")
+            return {"success": False, "message": f"Network error: {e}"}
+
+    @staticmethod
+    def get_task_types_by_project(project_id: str):
+        """Make API request to get tasks for a project"""
+
+        try:
+            response = gazu_client.task.all_task_types_for_project(project_id)
+            logger.info(f"Tasks for Project {project_id}: {response}")
             return response
         except Exception as e:
             logger.error(f"Network error: {e}")
