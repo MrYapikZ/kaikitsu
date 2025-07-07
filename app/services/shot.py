@@ -41,3 +41,15 @@ class ShotService:
         except Exception as e:
             logger.error(f"Network error: {e}")
             return {"success": False, "message": f"Network error: {e}"}
+
+    @staticmethod
+    def get_sequence_by_name(project_id: str, episode_id: str, sequence_name: str):
+        """Fetch sequence by name"""
+
+        try:
+            response = gazu_client.shot.get_sequence_by_name(project=project_id, episode=episode_id, sequence_name=sequence_name)
+            logger.info(f"Shot sequence by name: {response}")
+            return response
+        except Exception as e:
+            logger.error(f"Network error: {e}")
+            return {"success": False, "message": f"Network error: {e}"}

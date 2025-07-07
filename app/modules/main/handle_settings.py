@@ -376,3 +376,56 @@ class SettingsHandler(QWidget):
                 QMessageBox.warning(self, "Error", response.get("message", "Failed to load master shots."))
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+
+    def populate_from_quick_pull(self, project_id, task_id, episode_id, sequence_id, shot_id):
+        """Populate Settings form with quick pull data for creating new MasterShot"""
+        try:
+            print(f"[+] Populating Settings with: Project:{project_id}, Task:{task_id}, Episode:{episode_id}, Sequence:{sequence_id}, Shot:{shot_id}")
+
+            # Find and select the project
+            for i in range(self.ui.comboBox_project.count()):
+                if self.ui.comboBox_project.itemData(i) == project_id:
+                    self.ui.comboBox_project.setCurrentIndex(i)
+                    break
+
+            # Trigger project changed to populate tasks
+            self.on_project_changed(self.ui.comboBox_project.currentIndex())
+
+            # Find and select the task
+            for i in range(self.ui.comboBox_task.count()):
+                if self.ui.comboBox_task.itemData(i) == task_id:
+                    self.ui.comboBox_task.setCurrentIndex(i)
+                    break
+
+            # Trigger task changed to populate episodes/sequences/shots
+            self.on_task_changed(self.ui.comboBox_task.currentIndex())
+
+            # Find and select the episode
+            for i in range(self.ui.comboBox_episode.count()):
+                if self.ui.comboBox_episode.itemData(i) == episode_id:
+                    self.ui.comboBox_episode.setCurrentIndex(i)
+                    break
+
+            # Trigger episode changed to populate sequences
+            self.on_episode_changed(self.ui.comboBox_episode.currentIndex())
+
+            # Find and select the sequence
+            for i in range(self.ui.comboBox_sequence.count()):
+                if self.ui.comboBox_sequence.itemData(i) == sequence_id:
+                    self.ui.comboBox_sequence.setCurrentIndex(i)
+                    break
+
+            # Trigger sequence changed to populate shots
+            self.on_sequence_changed(self.ui.comboBox_sequence.currentIndex())
+
+            # Find and select the shot
+            for i in range(self.ui.comboBox_shot.count()):
+                if self.ui.comboBox_shot.itemData(i) == shot_id:
+                    self.ui.comboBox_shot.setCurrentIndex(i)
+                    break
+
+            print("[+] Settings form populated successfully with quick pull data")
+
+        except Exception as e:
+            print(f"[-] Error populating Settings form: {e}")
+

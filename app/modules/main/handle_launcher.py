@@ -294,15 +294,15 @@ class LauncherHandler(QWidget):
         if not path_data or not path_data.get("success", False):
             print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
             if self.show_question_popup("MasterShot Missing", "Failed to get MasterShot data.\nDo you want to create a new MasterShot?"):
-                # Create new MasterShot logic here
+                # Navigate to Settings tab and populate with quick pull data for creating new MasterShot
                 print("[!] Creating new MasterShot...")
+                self.navigate_to_settings_with_data(project_id, task_id, episode_id, sequence_id, shot_id)
                 return
             else:
                 print("[-] Quick pull operation cancelled.")
                 return
 
         self.set_tableview_detail(path_data.get("data", {}))
-
 
         # Perform the quick pull operation here
         print(f"Quick Pull: Project ID: {project_id}, Task ID: {task_id}, Episode ID: {episode_id}, "
@@ -337,3 +337,136 @@ class LauncherHandler(QWidget):
             return
 
         open_file_with_dialog(file_path=file_path)
+
+    def navigate_to_settings_with_data(self, project_id, task_id, episode_id, sequence_id, shot_id):
+        """Navigate to Settings tab and populate it with quick pull data"""
+        try:
+            # Find the main window and tab widget
+            main_window = self.window()
+            if hasattr(main_window, 'ui') and hasattr(main_window.ui, 'tabWidget'):
+                tab_widget = main_window.ui.tabWidget
+
+                # Find the Settings tab
+                for i in range(tab_widget.count()):
+                    if tab_widget.tabText(i) == "Settings":
+                        # Switch to Settings tab
+                        tab_widget.setCurrentIndex(i)
+
+                        # Get the Settings handler widget
+                        settings_widget = tab_widget.widget(i)
+                        if hasattr(settings_widget, 'populate_from_quick_pull'):
+                            # Populate with quick pull data
+                            settings_widget.populate_from_quick_pull(project_id, task_id, episode_id, sequence_id, shot_id)
+                        else:
+                            print("[-] Settings widget doesn't have populate_from_quick_pull method")
+                        break
+                else:
+                    print("[-] Settings tab not found")
+            else:
+                print("[-] Could not find main window tab widget")
+        except Exception as e:
+            print(f"[-] Error navigating to Settings: {e}")
+
+    def populate_from_task_data(self, project_id, task_id, episode_id, sequence_id, shot_id, master_shot_data=None):
+        """Populate Launcher form with task data from Dashboard"""
+        try:
+            print(f"[+] Populating Launcher with: Project:{project_id}, Task:{task_id}, Episode:{episode_id}, Sequence:{sequence_id}, Shot:{shot_id}")
+
+            # Find and select the project
+            for i in range(self.ui.comboBox_project.count()):
+                if self.ui.comboBox_project.itemData(i) == project_id:
+                    self.ui.comboBox_project.setCurrentIndex(i)
+                    break
+
+            # Trigger project changed to populate tasks
+            self.on_project_changed(self.ui.comboBox_project.currentIndex())
+
+            # Find and select the task
+            for i in range(self.ui.comboBox_task.count()):
+                if self.ui.comboBox_task.itemData(i) == task_id:
+                    self.ui.comboBox_task.setCurrentIndex(i)
+                    break
+
+            # Trigger task changed to populate episodes/sequences/shots
+            self.on_task_changed(self.ui.comboBox_task.currentIndex())
+
+            # Find and select the episode if available
+            if episode_id:
+                for i in range(self.ui.comboBox_episode.count()):
+                    if self.ui.comboBox_episode.itemData(i) == episode_id:
+                        self.ui.comboBox_episode.setCurrentIndex(i)
+                        break
+
+                # Trigger episode changed to populate sequences
+                self.on_episode_changed(self.ui.comboBox_episode.currentIndex())
+
+            # Find and select the sequence if available
+            if sequence_id:
+                for i in range(self.ui.comboBox_sequence.count()):
+                    if self.ui.comboBox_sequence.itemData(i) == sequence_id:
+                        self.ui.comboBox_sequence.setCurrentIndex(i)
+                        break
+
+                # Trigger sequence changed to populate shots
+                self.on_sequence_changed(self.ui.comboBox_sequence.currentIndex())
+
+            # Find and select the shot if available
+            if shot_id:
+                for i in range(self.ui.comboBox_shot.count()):
+                    if self.ui.comboBox_shot.itemData(i) == shot_id:
+                        self.ui.comboBox_shot.setCurrentIndex(i)
+                        break
+
+            # Display master shot data if available
+            if master_shot_data:
+                self.set_tableview_detail(master_shot_data)
+
+            print("[+] Launcher form populated successfully with task data")
+
+        except Exception as e:
+            print(f"[-] Error populating Launcher form: {e}")
+
+    def on_preview_open(self):
+        """Pull master shot data and display in table view"""
+        project_index = self.ui.comboBox_project.currentIndex()
+        task_index = self.ui.comboBox_task.currentIndex()
+        episode_index = self.ui.comboBox_episode.currentIndex()
+        sequence_index = self.ui.comboBox_sequence.currentIndex()
+        shot_index = self.ui.comboBox_shot.currentIndex()
+
+        project_id = self.ui.comboBox_project.itemData(project_index)
+        task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
+        episode_id = self.ui.comboBox_episode.itemData(episode_index) if episode_index >= 0 else None
+        sequence_id = self.ui.comboBox_sequence.itemData(sequence_index) if sequence_index >= 0 else None
+        shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
+
+        if not project_id or not task_id or not shot_id:
+            print("[-] Please select all required fields: Project, Task, and Shot.")
+            return
+
+        try:
+            # Pull data from KiyokaiService
+            print(f"[+] Pulling master shot data for Shot ID: {shot_id}, Task ID: {task_id}")
+            path_data = KiyokaiService().get_master_shot_data_by_id(shot_id, task_id)
+
+            if path_data and path_data.get("success", False):
+                # Display data in table view
+                self.set_tableview_detail(path_data.get("data", {}))
+                print(f"[+] Master shot data loaded successfully")
+            else:
+                print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
+                if self.show_question_popup("MasterShot Missing", "Failed to get MasterShot data.\nDo you want to create a new MasterShot?"):
+                    # Navigate to Settings tab and populate with quick pull data for creating new MasterShot
+                    print("[!] Creating new MasterShot...")
+                    self.navigate_to_settings_with_data(project_id, task_id, episode_id, sequence_id, shot_id)
+                    return
+                else:
+                    print("[-] Preview operation cancelled.")
+                    return
+
+        except Exception as e:
+            print(f"[-] Error pulling master shot data: {e}")
+            # Clear the table on error
+            model = QStandardItemModel()
+            model.setHorizontalHeaderLabels(["Key", "Value"])
+            self.ui.tableView_metadataContent.setModel(model)

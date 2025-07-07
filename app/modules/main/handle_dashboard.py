@@ -1,11 +1,13 @@
 from PyQt6.QtCore import Qt, QStringListModel
 from PyQt6.QtGui import QPixmap, QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtWidgets import QWidget, QTreeWidgetItem, QListWidgetItem, QPushButton, QHeaderView, QStyleOptionButton, \
-    QHBoxLayout, QAbstractItemView, QSizePolicy
+    QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox
 
 from app.core.app_states import AppState
 from app.services.files import FileService
+from app.services.shot import ShotService
 from app.services.task import TaskService
+from app.services.kiyokai import KiyokaiService
 from app.ui.main.page.dashboard_ui import Ui_Form
 from app.services.auth import AuthServices
 
@@ -18,6 +20,8 @@ class DashboardHandler(QWidget):
         self.tasks = None
 
         self.task_refresh()
+
+        self.ui.pushButton_previewOpen.clicked.connect(self.on_preview_open)
 
 # PyQt Program =====================================================================================
     def task_refresh(self):
@@ -213,3 +217,151 @@ class DashboardHandler(QWidget):
             header.setSectionResizeMode(model.columnCount() - 1, QHeaderView.ResizeMode.Stretch)
 
         details_widget(task_id)
+
+    def show_question_popup(self, title: str, message: str) -> bool:
+        """Show a question popup dialog"""
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        response = msg_box.exec()
+        return response == QMessageBox.StandardButton.Yes
+
+    def navigate_to_launcher_with_data(self, project_id, task_id, episode_id, sequence_id, shot_id, master_shot_data=None):
+        """Navigate to Launcher tab and populate it with task data"""
+        try:
+            # Find the main window and tab widget
+            main_window = self.window()
+            if hasattr(main_window, 'ui') and hasattr(main_window.ui, 'tabWidget'):
+                tab_widget = main_window.ui.tabWidget
+
+                # Find the Launcher tab
+                for i in range(tab_widget.count()):
+                    if tab_widget.tabText(i) == "Launcher":
+                        # Switch to Launcher tab
+                        tab_widget.setCurrentIndex(i)
+
+                        # Get the Launcher handler widget
+                        launcher_widget = tab_widget.widget(i)
+                        if hasattr(launcher_widget, 'populate_from_task_data'):
+                            # Populate with task data
+                            launcher_widget.populate_from_task_data(project_id, task_id, episode_id, sequence_id, shot_id, master_shot_data)
+                        elif hasattr(launcher_widget, 'set_tableview_detail') and master_shot_data:
+                            # Just set the table view detail if populate method doesn't exist
+                            launcher_widget.set_tableview_detail(master_shot_data)
+                        else:
+                            print("[-] Launcher widget doesn't have required methods")
+                        break
+                else:
+                    print("[-] Launcher tab not found")
+            else:
+                print("[-] Could not find main window tab widget")
+        except Exception as e:
+            print(f"[-] Error navigating to Launcher: {e}")
+
+    def navigate_to_settings_with_data(self, project_id, task_id, episode_id, sequence_id, shot_id):
+        """Navigate to Settings tab and populate it with task data for creating new MasterShot"""
+        try:
+            # Find the main window and tab widget
+            main_window = self.window()
+            if hasattr(main_window, 'ui') and hasattr(main_window.ui, 'tabWidget'):
+                tab_widget = main_window.ui.tabWidget
+
+                # Find the Settings tab
+                for i in range(tab_widget.count()):
+                    if tab_widget.tabText(i) == "Settings":
+                        # Switch to Settings tab
+                        tab_widget.setCurrentIndex(i)
+
+                        # Get the Settings handler widget
+                        settings_widget = tab_widget.widget(i)
+                        if hasattr(settings_widget, 'populate_from_quick_pull'):
+                            # Populate with task data
+                            settings_widget.populate_from_quick_pull(project_id, task_id, episode_id, sequence_id, shot_id)
+                        else:
+                            print("[-] Settings widget doesn't have populate_from_quick_pull method")
+                        break
+                else:
+                    print("[-] Settings tab not found")
+            else:
+                print("[-] Could not find main window tab widget")
+        except Exception as e:
+            print(f"[-] Error navigating to Settings: {e}")
+
+    def on_preview_open(self):
+        """Open preview - navigate to Launcher and pull master shot data"""
+        # Get task ID from the details table instead of task table
+        details_model = self.ui.tableView_details.model()
+        if not details_model:
+            print("[-] No details available. Please select a task first to populate details.")
+            return
+
+        # Extract task_id from details table
+        task_id = None
+        for row in range(details_model.rowCount()):
+            key_index = details_model.index(row, 0)
+            value_index = details_model.index(row, 1)
+            key = details_model.data(key_index)
+            value = details_model.data(value_index)
+
+            if key == "Task ID":
+                task_id = value
+                break
+
+        if not task_id:
+            print("[-] No Task ID found in details table")
+            return
+
+        # Find the task data using the task_id from details
+        task_data = next((task for task in self.tasks if task["id"] == task_id), None)
+        if not task_data:
+            print(f"[-] No task found with ID: {task_id}")
+            return
+
+
+
+        # Extract required IDs from task data
+        project_id = task_data.get("project_id")
+        episode_id = task_data.get("episode_id")
+        sequence_data = ShotService.get_sequence_by_name(project_id,episode_id,task_data.get("sequence_name"))
+        if sequence_data:
+            sequence_id = sequence_data.get("id")
+        else :
+            sequence_id = None
+        shot_id = task_data.get("entity_id")  # Assuming entity_id is the shot_id for shots
+        task_type_id = task_data.get("task_type_id")
+
+        if not all([project_id, task_id, shot_id, task_type_id]):
+            print("[-] Missing required IDs in task data")
+            print(f"Project ID: {project_id}, Task ID: {task_id}, Shot ID: {shot_id}")
+            return
+
+        try:
+            # Pull master shot data from KiyokaiService
+            print(f"[+] Pulling master shot data for Shot ID: {shot_id}, Task ID: {task_type_id}")
+            path_data = KiyokaiService().get_master_shot_data_by_id(shot_id=shot_id, task_id=task_type_id)
+
+            if path_data and path_data.get("success", False):
+                # Navigate to Launcher and display the data
+                self.navigate_to_launcher_with_data(
+                    project_id, task_type_id, episode_id, sequence_id, shot_id,
+                    path_data.get("data", {})
+                )
+                print(f"[+] Successfully navigated to Launcher with master shot data")
+            else:
+                print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
+                if self.show_question_popup("MasterShot Missing", "Failed to get MasterShot data.\nDo you want to create a new MasterShot?"):
+                    # Navigate to Settings tab and populate with task data for creating new MasterShot
+                    print("[!] Creating new MasterShot...")
+                    self.navigate_to_settings_with_data(project_id, task_type_id, episode_id, sequence_id, shot_id)
+                    return
+                else:
+                    print("[-] Preview operation cancelled.")
+                    return
+
+        except Exception as e:
+            print(f"[-] Error pulling master shot data: {e}")
+            # Navigate to Launcher anyway to show the interface
+            self.navigate_to_launcher_with_data(project_id, task_id, episode_id, sequence_id, shot_id)
