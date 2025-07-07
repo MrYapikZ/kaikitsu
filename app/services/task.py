@@ -34,19 +34,33 @@ class TaskService:
 
             if not response:
                 logger.warning("No tasks found for the project.")
-                return {"success": False, "message": "No tasks found for the project."}
+                return []
 
             extracted_data = []
 
             for task in response:
                 last_comment = task.get("last_comment", {})
 
-                user = gazu_client.person.get_person(last_comment.get("person_id"))
+                # Handle case where person_id might be invalid or missing
+                try:
+                    user = gazu_client.person.get_person(last_comment.get("person_id"))
+                    if not user:
+                        user = {"full_name": None, "has_avatar": False, "id": None}
+                except Exception as user_error:
+                    logger.warning(f"Could not fetch user for person_id {last_comment.get('person_id')}: {user_error}")
+                    user = {"full_name": None, "has_avatar": False, "id": None}
+
                 avatar_path = None
-                if user["has_avatar"]:
-                    os.makedirs(os.path.join(Settings.FILES_DIR, "avatar"), exist_ok=True)
-                    avatar_path = os.path.join(Settings.FILES_DIR, "avatar", f"{user['id']}.png")
-                    user["avatar_path"] = gazu_client.files.download_person_avatar(user["id"], file_path=avatar_path)
+                if user.get("has_avatar") and user.get("id"):
+                    try:
+                        os.makedirs(os.path.join(Settings.FILES_DIR, "avatar"), exist_ok=True)
+                        avatar_path = os.path.join(Settings.FILES_DIR, "avatar", f"{user['id']}.png")
+                        user["avatar_path"] = gazu_client.files.download_person_avatar(user["id"], file_path=avatar_path)
+                    except Exception as avatar_error:
+                        logger.warning(f"Could not download avatar for user {user.get('id')}: {avatar_error}")
+                        avatar_path = None
+
+                print("TASK:", task)
 
                 extracted_data.append({
                     "id": task.get("id"),
@@ -70,7 +84,7 @@ class TaskService:
             return extracted_data
         except Exception as e:
             logger.error(f"Network error: {e}")
-            return {"success": False, "message": f"Network error: {e}"}
+            return []  # Return empty list instead of error dictionary
 
     @staticmethod
     def get_task_comments(task_id: str):

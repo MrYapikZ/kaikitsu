@@ -38,35 +38,54 @@ class DashboardHandler(QWidget):
             model = QStandardItemModel()
             model.setHorizontalHeaderLabels(headers)
 
-            if not self.tasks:
-                print("[-] No tasks found.")
+            # Check if tasks is None, empty, or not a list
+            if not self.tasks or not isinstance(self.tasks, list):
+                print("[-] No tasks found or invalid task data.")
                 self.ui.tableView_task.setModel(model)
                 return
 
             for index, task in enumerate(self.tasks):
-                if task.get("episode_name") and task.get("sequence_name"):
-                    entity = f"{task.get('entity_type_name', '')} / {task.get('episode_name', '')} / {task.get('sequence_name', '')} / {task.get('entity_name', '')}"
-                else:
-                    entity = f"{task.get('entity_type_name', '')} / {task.get('entity_name', '')}"
+                # Validate that task is a dictionary
+                if not isinstance(task, dict):
+                    print(f"[-] Invalid task data at index {index}: {task}")
+                    continue
 
-                item_project = QStandardItem(task["project_name"])
-                item_project.setData(task["id"], Qt.ItemDataRole.UserRole)
+                # Safely get entity information
+                try:
+                    if task.get("episode_name") and task.get("sequence_name"):
+                        entity = f"{task.get('entity_type_name', '')} / {task.get('episode_name', '')} / {task.get('sequence_name', '')} / {task.get('entity_name', '')}"
+                    else:
+                        entity = f"{task.get('entity_type_name', '')} / {task.get('entity_name', '')}"
+                except Exception as e:
+                    print(f"[-] Error processing entity for task {index}: {e}")
+                    entity = "Unknown Entity"
 
-                item_user = QStandardItem(task.get("last_comment_person_full_name", ""))
-                if task.get("last_comment_person_avatar_path", ""):
-                    item_user.setIcon(QIcon(task.get("last_comment_person_avatar_path", "")))
+                # Safely create table items with default values
+                try:
+                    item_project = QStandardItem(task.get("project_name", "Unknown Project"))
+                    item_project.setData(task.get("id", ""), Qt.ItemDataRole.UserRole)
 
-                row = [
-                    item_project,
-                    QStandardItem(task["task_type_name"]),
-                    QStandardItem(task["task_status_name"]),
-                    QStandardItem(entity),
-                    QStandardItem(str(task.get("due_date", ""))),
-                    QStandardItem(str(task["priority"])),
-                    item_user,
-                    QStandardItem(task.get("last_comment_text", ""))
-                ]
-                model.appendRow(row)
+                    item_user = QStandardItem(task.get("last_comment_person_full_name", ""))
+                    if task.get("last_comment_person_avatar_path", ""):
+                        try:
+                            item_user.setIcon(QIcon(task.get("last_comment_person_avatar_path", "")))
+                        except Exception as icon_error:
+                            print(f"[-] Could not load avatar icon: {icon_error}")
+
+                    row = [
+                        item_project,
+                        QStandardItem(task.get("task_type_name", "")),
+                        QStandardItem(task.get("task_status_name", "")),
+                        QStandardItem(entity),
+                        QStandardItem(str(task.get("due_date", ""))),
+                        QStandardItem(str(task.get("priority", ""))),
+                        item_user,
+                        QStandardItem(task.get("last_comment_text", ""))
+                    ]
+                    model.appendRow(row)
+                except Exception as e:
+                    print(f"[-] Error creating table row for task {index}: {e}")
+                    continue
 
             self.ui.tableView_task.setModel(model)
             self.ui.tableView_task.resizeColumnsToContents()
@@ -83,11 +102,17 @@ class DashboardHandler(QWidget):
         def load_details(task):
             """Load task details in a new window or dialog"""
             # This function should be implemented to show task details
-            row = task.row()
-            model = self.ui.tableView_task.model()
-            task_id = model.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            try:
+                row = task.row()
+                model = self.ui.tableView_task.model()
+                task_id = model.item(row, 0).data(Qt.ItemDataRole.UserRole)
 
-            self.details_panel(task_id)
+                if task_id:
+                    self.details_panel(task_id)
+                else:
+                    print("[-] No task ID found for selected row")
+            except Exception as e:
+                print(f"[-] Error loading task details: {e}")
 
             # print(f"Loading details for task: {task.data(Qt.ItemDataRole.UserRole)}")
 
