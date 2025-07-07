@@ -1,3 +1,4 @@
+import os.path
 import sys
 
 from PyQt6.QtCore import Qt, QStringListModel
@@ -15,6 +16,7 @@ from app.services.task import TaskService
 from app.services.auth import AuthServices
 from app.services.kiyokai import KiyokaiService
 from app.services.launcher.launcher_data import LauncherData
+from app.utils.open_file import open_file_with_dialog
 
 class LauncherHandler(QWidget):
     def __init__(self):
@@ -28,7 +30,8 @@ class LauncherHandler(QWidget):
 
         self.set_combobox_data()
 
-        self.ui.pushButton_quickPull.clicked.connect(self.quick_pull)
+        self.ui.pushButton_quickPull.clicked.connect(self.on_quick_pull)
+        self.ui.pushButton_open.clicked.connect(self.on_open_file)
 
     def show_question_popup(self,title: str , message: str) -> bool:
         app = QApplication.instance()
@@ -267,7 +270,7 @@ class LauncherHandler(QWidget):
         else:
             self.ui.comboBox_shot.setEnabled(False)
 
-    def quick_pull(self):
+    def on_quick_pull(self):
         """Quick pull data from the selected project, task, episode, sequence, and shot"""
 
         project_index = self.ui.comboBox_project.currentIndex()
@@ -305,3 +308,32 @@ class LauncherHandler(QWidget):
         print(f"Quick Pull: Project ID: {project_id}, Task ID: {task_id}, Episode ID: {episode_id}, "
               f"Sequence ID: {sequence_id}, Shot ID: {shot_id}")
 
+    def on_open_file(self):
+        """Open the selected file using an OS-specific file dialog."""
+        model = self.ui.tableView_metadataContent.model()
+
+        if not model:
+            print("[-] No metadata model available.")
+            return
+
+        file_path = None
+
+        for row in range(model.rowCount()):
+            key_index = model.index(row, 0)
+            value_index = model.index(row, 1)
+            key = model.data(key_index)
+            value = model.data(value_index)
+
+            if key == "File Path":
+                file_path = value
+                break  # found the value, stop searching
+
+        if not file_path:
+            print("[-] Missing file path.")
+            return
+
+        if not os.path.exists(file_path):
+            print(f"[-] File does not exist: {file_path}")
+            return
+
+        open_file_with_dialog(file_path=file_path)
