@@ -22,7 +22,7 @@ class AuthServices:
                 Settings.SESSION_FILE = user
                 gazu_client.files.download_person_avatar(user["user"]["id"], file_path=Settings.AVATAR_FILE)
 
-                logger.info(f"User authenticated: {user["user"]["full_name"]}")
+                logger.info(f"User authenticated: {user}")
                 return {
                     "success": True,
                     "message": "Authentication successful",

@@ -1,16 +1,20 @@
+import sys
+
 from PyQt6.QtCore import Qt, QStringListModel
 from PyQt6.QtGui import QPixmap, QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtWidgets import QWidget, QTreeWidgetItem, QListWidgetItem, QPushButton, QHeaderView, QStyleOptionButton, \
-    QHBoxLayout, QAbstractItemView, QSizePolicy
+    QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox
 
+from app.ui.main.page.launcher_ui import Ui_Form
 from app.core.app_states import AppState
 from app.services.asset import AssetService
 from app.services.files import FileService
 from app.services.project import ProjectService
 from app.services.shot import ShotService
 from app.services.task import TaskService
-from app.ui.main.page.launcher_ui import Ui_Form
 from app.services.auth import AuthServices
+from app.services.kiyokai import KiyokaiService
+from app.services.launcher.launcher_data import LauncherData
 
 class LauncherHandler(QWidget):
     def __init__(self):
@@ -18,71 +22,28 @@ class LauncherHandler(QWidget):
         self.ui = Ui_Form()
         self.ui.setupUi(self)
 
-        self.project_data = None
-        self.load_data()
+        self.project_data = LauncherData().load_data()
 
         self.set_combobox_data()
 
+        self.ui.pushButton_quickPull.clicked.connect(self.quick_pull)
+
+    def show_question_popup(self,title: str , message: str) -> bool:
+        app = QApplication.instance()
+        if not app:
+            app = QApplication(sys.argv)
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        response = msg_box.exec()
+
+        return response == QMessageBox.StandardButton.Yes
 
 # PyQt Program =====================================================================================
-    def load_data(self):
-        """Load data into the launcher"""
-
-        all_data = []
-
-        # Load projects
-        project_list = ProjectService.get_user_project()
-        for project in project_list:
-            project_id = project.get("id")
-
-            task_list = TaskService.get_task_types_by_project(project_id)
-            asset_list = AssetService.get_asset_types_by_project(project_id)
-
-            project_data = {
-                "project_id": project_id,
-                "project": project.get("name"),
-                "episodes": [],
-                "tasks": [
-                    {"id": task["id"], "name": task["name"], "for_entity": task["for_entity"]}
-                    for task in task_list
-                ],
-                "assets": [
-                    {"id": asset["id"], "name": asset["name"]} for asset in asset_list
-                ]
-            }
-            # Load episodes for each project
-            episode_list = ShotService.get_episode_by_project(project_id)
-            for episode in episode_list:
-                episode_id = episode.get("id")
-                episode_data = {
-                    "episode_id": episode_id,
-                    "episode": episode.get("name"),
-                    "sequences": []
-                }
-                # Load sequences for each episode
-                sequence_list = ShotService.get_sequence_by_episode(episode_id)
-                for sequence in sequence_list:
-                    sequence_id = sequence.get("id")
-                    sequence_data = {
-                        "sequence_id": sequence_id,
-                        "sequence": sequence.get("name"),
-                        "shots": []
-                    }
-                    # Load shots for each sequence
-                    shots = ShotService.get_shots_by_sequence(sequence_id)
-                    shot_data = []
-                    for shot in shots:
-                        shot_data.append({
-                            "shot_id": shot.get("id"),
-                            "shot": shot.get("name"),
-                        })
-
-                    sequence_data["shots"] = shot_data
-                    episode_data["sequences"].append(sequence_data)
-                project_data["episodes"].append(episode_data)
-            all_data.append(project_data)
-        self.project_data = all_data
-        print(f"All Data: {all_data}")
 
     def set_combobox_data(self):
         """Set data for a combo box"""
@@ -137,7 +98,7 @@ class LauncherHandler(QWidget):
             self.ui.comboBox_task.show()
 
             for task in project["tasks"]:
-                self.ui.comboBox_task.addItem(task["name"], task["id"])
+                self.ui.comboBox_task.addItem(task["task"], task["task_id"])
         else:
             self.ui.comboBox_task.setEnabled(False)
 
@@ -154,12 +115,12 @@ class LauncherHandler(QWidget):
 
         # Get data project and task
         project = next((p for p in self.project_data if p["project_id"] == project_id), None)
-        task = next((t for t in project["tasks"] if t["id"] == task_id), None) if project else None
+        task = next((t for t in project["tasks"] if t["task_id"] == task_id), None) if project else None
 
         if not task:
             return
 
-        entity = task.get("for_entity", "").lower()
+        entity = task.get("task_for_entity", "").lower()
 
         if entity == "asset":
             # Show combo asset
@@ -178,7 +139,7 @@ class LauncherHandler(QWidget):
             # Fill asset if exist
             if project and project.get("assets"):
                 for asset in project["assets"]:
-                    self.ui.comboBox_asset.addItem(asset["name"], asset["id"])
+                    self.ui.comboBox_asset.addItem(asset["asset"], asset["asset_id"])
             else:
                 self.ui.comboBox_asset.setEnabled(False)
 
@@ -241,3 +202,41 @@ class LauncherHandler(QWidget):
                 self.ui.comboBox_shot.addItem(shot["shot"], shot["shot_id"])
         else:
             self.ui.comboBox_shot.setEnabled(False)
+
+    def quick_pull(self):
+        """Quick pull data from the selected project, task, episode, sequence, and shot"""
+
+        project_index = self.ui.comboBox_project.currentIndex()
+        task_index = self.ui.comboBox_task.currentIndex()
+        episode_index = self.ui.comboBox_episode.currentIndex()
+        sequence_index = self.ui.comboBox_sequence.currentIndex()
+        shot_index = self.ui.comboBox_shot.currentIndex()
+
+        project_id = self.ui.comboBox_project.itemData(project_index)
+        task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
+        episode_id = self.ui.comboBox_episode.itemData(episode_index) if episode_index >= 0 else None
+        sequence_id = self.ui.comboBox_sequence.itemData(sequence_index) if sequence_index >= 0 else None
+        shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
+
+        if not project_id or not task_id or not episode_id or not sequence_id or not shot_id:
+            print("[-] Please select all required fields: Project, Task, Episode, Sequence, and Shot.")
+            return
+
+        path_data = KiyokaiService().get_master_shot_data_by_id(shot_id, task_id)
+
+        if not path_data or not path_data.get("success", False):
+            print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
+            if self.show_question_popup("MasterShot Missing", "Failed to get MasterShot data.\nDo you want to create a new MasterShot?"):
+                # Create new MasterShot logic here
+                print("[!] Creating new MasterShot...")
+                return
+            else:
+                print("[-] Quick pull operation cancelled.")
+                return
+
+        print("PATH DATA:", path_data)
+
+
+        # Perform the quick pull operation here
+        print(f"Quick Pull: Project ID: {project_id}, Task ID: {task_id}, Episode ID: {episode_id}, "
+              f"Sequence ID: {sequence_id}, Shot ID: {shot_id}")
