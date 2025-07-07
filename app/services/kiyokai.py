@@ -48,7 +48,7 @@ class KiyokaiService:
         }
 
         try:
-            response = httpx.get(f"{kiyokai_url}/api/v1/mastershots/list/{shot_id}/tasks/{task_id}", headers=headers)
+            response = httpx.get(f"{kiyokai_url}/api/v1/shots/mastershots/list/{shot_id}/tasks/{task_id}", headers=headers)
             response.raise_for_status()  # Raise an error for bad responses
             logger.info(f"Master shot data retrieved successfully: {response.json()}")
             return response.json()

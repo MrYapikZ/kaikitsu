@@ -111,14 +111,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QListWidget" name="listWidget_metadataContent">
-           <property name="isWrapping" stdset="0">
-            <bool>false</bool>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-          </widget>
+          <widget class="QTableView" name="tableView_metadataContent"/>
          </item>
         </layout>
        </item>

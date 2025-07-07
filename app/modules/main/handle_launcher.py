@@ -83,6 +83,68 @@ class LauncherHandler(QWidget):
         self.ui.comboBox_episode.currentIndexChanged.connect(self.on_episode_changed)
         self.ui.comboBox_sequence.currentIndexChanged.connect(self.on_sequence_changed)
 
+    def set_tableview_detail(self, master_shot_data):
+        if not master_shot_data:
+            print("[-] No master shot data provided")
+            return
+
+        model = QStandardItemModel()
+        model.setHorizontalHeaderLabels(["Key", "Value"])
+
+        field_map = {
+            "file_name": "File Name",
+            "file_path": "File Path",
+            "project_name": "Project",
+            "episode_name": "Episode",
+            "sequence_name": "Sequence",
+            "shot_name": "Shot",
+            "task_name": "Task",
+            "edit_user_name": "Last Edited By",
+            "created_at": "Created At",
+            "updated_at": "Updated At",
+        }
+
+        for key, label in field_map.items():
+            value = master_shot_data.get(key, "")
+            item_key = QStandardItem(label)
+            item_value = QStandardItem(str(value))
+            item_key.setEditable(False)
+            item_value.setEditable(False)
+            model.appendRow([item_key, item_value])
+
+        # Add NAS server info if exists
+        nas_data = master_shot_data.get("nas_server")
+        if nas_data:
+            nas_field_map = {
+                "name": "NAS Name",
+                # "host": "NAS Host",
+                # "port": "NAS Port",
+                # "username": "NAS Username",
+                # "project_path": "NAS Project Path",
+                "drive_letter": "NAS Drive Letter",
+            }
+            for key, label in nas_field_map.items():
+                value = nas_data.get(key, "")
+                item_key = QStandardItem(label)
+                item_value = QStandardItem(str(value))
+                item_key.setEditable(False)
+                item_value.setEditable(False)
+                model.appendRow([item_key, item_value])
+
+        # Clear preview
+        # self.ui.label_preview.clear()
+        # self.ui.label_preview.setText("Preview")
+        # self.ui.label_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Set table
+        self.ui.tableView_metadataContent.setModel(model)
+        self.ui.tableView_metadataContent.verticalHeader().setVisible(False)
+        header = self.ui.tableView_metadataContent.horizontalHeader()
+        self.ui.tableView_metadataContent.resizeColumnsToContents()
+        for col in range(model.columnCount() - 1):
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(model.columnCount() - 1, QHeaderView.ResizeMode.Stretch)
+
     def on_project_changed(self, index):
         self.ui.comboBox_episode.clear()
         self.ui.comboBox_task.clear()
@@ -236,6 +298,10 @@ class LauncherHandler(QWidget):
                 print("[-] Quick pull operation cancelled.")
                 return
 
+        self.set_tableview_detail(path_data.get("data", {}))
+
+
         # Perform the quick pull operation here
         print(f"Quick Pull: Project ID: {project_id}, Task ID: {task_id}, Episode ID: {episode_id}, "
               f"Sequence ID: {sequence_id}, Shot ID: {shot_id}")
+
