@@ -102,6 +102,43 @@ class KiyokaiService:
             }
 
     @staticmethod
+    def update_master_shot(shot_id: str, task_id: str, data: dict) -> dict:
+        """
+        Update an existing master shot in Kiyokai.
+        """
+        kiyokai_url = AppState().kiyokai_url
+        token = AppState().access_token
+
+        if not kiyokai_url or not token:
+            logger.error("Kiyokai URL is not set.")
+            return {
+                "success": False,
+                "message": "Kiyokai URL is not set."
+            }
+
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = httpx.patch(f"{kiyokai_url}/api/v1/shots/mastershots/update/{shot_id}/tasks/{task_id}", json=data, headers=headers)
+            response.raise_for_status()  # Raise an error for bad responses
+            logger.info(f"Master shot updated successfully: {response.json()}")
+            return response.json()
+        except httpx.RequestError as e:
+            logger.error(f"Request error while updating master shot: {e}")
+            return {
+                "success": False,
+                "message": f"Request error: {str(e)}"
+            }
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error while updating master shot: {e}")
+            return {
+                "success": False,
+                "message": f"HTTP error: {str(e)}"
+            }
+
+    @staticmethod
     def create_nas_server(data: dict) -> dict:
         """
         Create a new NAS server in Kiyokai.

@@ -1,3 +1,4 @@
+import os
 import sys
 
 from PyQt6.QtCore import Qt, QStringListModel
@@ -30,13 +31,30 @@ class SettingsHandler(QWidget):
 
         self.ui.pushButton_nasSave.clicked.connect(self.on_create_nas)
         self.ui.toolButton_locateFile.clicked.connect(self.open_file_dialog)
-        self.ui.pushButton_createUpdate.clicked.connect(self.on_create_master_shot)
+        self.ui.pushButton_shotCreate.clicked.connect(self.on_create_master_shot)
+        self.ui.pushButton_shotUpdate.clicked.connect(self.on_update_master_shot)
+        self.ui.pushButton_shotLoad.clicked.connect(self.on_load_master_shots)
 
     def open_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select a File")
         if file_path:
             self.ui.lineEdit_locateFile.setText(file_path)
             print("Selected file:", file_path)
+
+    def show_question_popup(self,title: str , message: str) -> bool:
+        app = QApplication.instance()
+        if not app:
+            app = QApplication(sys.argv)
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        response = msg_box.exec()
+
+        return response == QMessageBox.StandardButton.Yes
 
 
 # PyQt Program =====================================================================================
@@ -295,7 +313,66 @@ class SettingsHandler(QWidget):
             response = KiyokaiService.create_master_shot(data)
             if response.get("success"):
                 QMessageBox.information(self, "Success", "Master shot created successfully.")
+            elif response.get("exists"):
+                existing = response.get("data")
+                QMessageBox.warning(self, "Warning", f"Master shot already exists:\n\n"
+                                                     f"File Name: {existing.get('file_name')}\n"
+                                                     f"File Path: {existing.get('file_path')}\n"
+                                                     f"Task ID: {existing.get('task_name')}\n"
+                                                     f"Shot ID: {existing.get('shot_name')}")
             else:
                 QMessageBox.warning(self, "Error", response.get("message", "Failed to create master shot."))
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+
+    def on_update_master_shot(self):
+        """Update Master Shot"""
+        try:
+            task_index = self.ui.comboBox_task.currentIndex()
+            shot_index = self.ui.comboBox_shot.currentIndex()
+
+            task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
+            shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
+
+            file_path = self.ui.lineEdit_locateFile.text()
+            file_name = file_path.split("/")[-1] if file_path else None
+
+            data = {
+                "file_name": file_name,
+                "file_path": file_path,
+                "edit_user_id": AppState().user_data.get("user").get("id"),
+                "edit_user_name": AppState().user_data.get("user").get("full_name"),
+            }
+
+            response = KiyokaiService.update_master_shot(shot_id=shot_id, task_id=task_id, data=data)
+            if response.get("success"):
+                QMessageBox.information(self, "Success", "Master shot updated successfully.")
+            else:
+                print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
+                if self.show_question_popup("MasterShot Missing",
+                                            "Failed to get MasterShot data.\nDo you want to create a new MasterShot?"):
+                    print("[!] Creating new MasterShot...")
+                    self.on_create_master_shot()
+                    return
+                else:
+                    print("[-] Quick pull operation cancelled.")
+                    return
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+
+    def on_load_master_shots(self):
+        """Load Master Shots"""
+        try:
+            task_index = self.ui.comboBox_task.currentIndex()
+            shot_index = self.ui.comboBox_shot.currentIndex()
+            task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
+            shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
+
+            response = KiyokaiService.get_master_shot_data_by_id(shot_id=shot_id, task_id=task_id)
+            if response.get("success"):
+                master_shots = response.get("data", {})
+                self.ui.lineEdit_locateFile.setText(os.path.join(master_shots.get("file_path", ""), master_shots.get("file_name", "")) ) # NEED TO FIX
+            else:
+                QMessageBox.warning(self, "Error", response.get("message", "Failed to load master shots."))
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
