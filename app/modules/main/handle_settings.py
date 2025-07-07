@@ -3,7 +3,7 @@ import sys
 from PyQt6.QtCore import Qt, QStringListModel
 from PyQt6.QtGui import QPixmap, QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtWidgets import QWidget, QTreeWidgetItem, QListWidgetItem, QPushButton, QHeaderView, QStyleOptionButton, \
-    QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox
+    QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox, QFileDialog
 
 from app.ui.main.page.settings_ui import Ui_Form
 from app.core.app_states import AppState
@@ -29,6 +29,14 @@ class SettingsHandler(QWidget):
         self.set_combobox_data()
 
         self.ui.pushButton_nasSave.clicked.connect(self.on_create_nas)
+        self.ui.toolButton_locateFile.clicked.connect(self.open_file_dialog)
+        self.ui.pushButton_createUpdate.clicked.connect(self.on_create_master_shot)
+
+    def open_file_dialog(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select a File")
+        if file_path:
+            self.ui.lineEdit_locateFile.setText(file_path)
+            print("Selected file:", file_path)
 
 
 # PyQt Program =====================================================================================
@@ -73,6 +81,22 @@ class SettingsHandler(QWidget):
 
         # Set NAS server list
         self.set_combobox_nas_server()
+
+    def set_combobox_nas_server(self):
+        """Set NAS server list in comboBox"""
+        try:
+            response = KiyokaiService.get_nas_server_list()
+            if response.get("success"):
+                nas_servers = response.get("data", [])
+                self.ui.comboBox_nas.clear()
+                self.ui.comboBox_nasSettings.clear()
+                for nas in nas_servers:
+                    self.ui.comboBox_nas.addItem(nas["name"], nas["id"])
+                    self.ui.comboBox_nasSettings.addItem(nas["name"], nas["id"])
+            else:
+                QMessageBox.warning(self, "Error", response.get("message", "Failed to fetch NAS servers."))
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
     def on_project_changed(self, index):
         self.ui.comboBox_episode.clear()
@@ -217,19 +241,61 @@ class SettingsHandler(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
-    def set_combobox_nas_server(self):
-        """Set NAS server list in comboBox"""
+    def on_create_master_shot(self):
+        """Create Master Shot"""
         try:
-            response = KiyokaiService.get_nas_server_list()
-            print("RESPONSE: ", response)
+            project_index = self.ui.comboBox_project.currentIndex()
+            task_index = self.ui.comboBox_task.currentIndex()
+            episode_index = self.ui.comboBox_episode.currentIndex()
+            sequence_index = self.ui.comboBox_sequence.currentIndex()
+            shot_index = self.ui.comboBox_shot.currentIndex()
+            nas_index = self.ui.comboBox_nas.currentIndex()
+
+            project_id = self.ui.comboBox_project.itemData(project_index)
+            project_name = self.ui.comboBox_project.itemText(project_index)
+
+            task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
+            task_name = self.ui.comboBox_task.itemText(task_index) if task_index >= 0 else None
+
+            episode_id = self.ui.comboBox_episode.itemData(episode_index) if episode_index >= 0 else None
+            episode_name = self.ui.comboBox_episode.itemText(episode_index) if episode_index >= 0 else None
+
+            sequence_id = self.ui.comboBox_sequence.itemData(sequence_index) if sequence_index >= 0 else None
+            sequence_name = self.ui.comboBox_sequence.itemText(sequence_index) if sequence_index >= 0 else None
+
+            shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
+            shot_name = self.ui.comboBox_shot.itemText(shot_index) if shot_index >= 0 else None
+
+            nas_id = self.ui.comboBox_nas.itemData(nas_index) if nas_index >= 0 else None
+            nas_name = self.ui.comboBox_nas.itemText(nas_index) if nas_index >= 0 else None
+
+            file_path = self.ui.lineEdit_locateFile.text()
+            file_name = file_path.split("/")[-1] if file_path else None
+
+            print("USER DATA:", AppState().user_data)
+
+            data = {
+                "file_name": file_name,
+                "file_path": file_path,
+                "edit_user_id": AppState().user_data.get("user").get("id"),
+                "edit_user_name": AppState().user_data.get("user").get("full_name"),
+                "project_id": project_id,
+                "project_name": project_name,
+                "task_id": task_id,
+                "task_name": task_name,
+                "episode_id": episode_id,
+                "episode_name": episode_name,
+                "sequence_id": sequence_id,
+                "sequence_name": sequence_name,
+                "shot_id": shot_id,
+                "shot_name": shot_name,
+                "nas_server_id": nas_id,
+            }
+
+            response = KiyokaiService.create_master_shot(data)
             if response.get("success"):
-                nas_servers = response.get("data", [])
-                self.ui.comboBox_nas.clear()
-                self.ui.comboBox_nasSettings.clear()
-                for nas in nas_servers:
-                    self.ui.comboBox_nas.addItem(nas["name"], nas["id"])
-                    self.ui.comboBox_nasSettings.addItem(nas["name"], nas["id"])
+                QMessageBox.information(self, "Success", "Master shot created successfully.")
             else:
-                QMessageBox.warning(self, "Error", response.get("message", "Failed to fetch NAS servers."))
+                QMessageBox.warning(self, "Error", response.get("message", "Failed to create master shot."))
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")

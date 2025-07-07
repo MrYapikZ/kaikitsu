@@ -84,7 +84,7 @@ class KiyokaiService:
         }
 
         try:
-            response = httpx.post(f"{kiyokai_url}/api/v1/mastershots/create", json=data, headers=headers)
+            response = httpx.post(f"{kiyokai_url}/api/v1/shots/mastershots/create", json=data, headers=headers)
             response.raise_for_status()  # Raise an error for bad responses
             logger.info(f"Master shot created successfully: {response.json()}")
             return response.json()

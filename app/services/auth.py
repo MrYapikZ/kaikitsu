@@ -61,3 +61,57 @@ class AuthServices:
                 "success": False,
                 "message": f"Logout failed: {str(e)}"
             }
+
+    @staticmethod
+    def get_current_user() -> dict:
+        """
+        Get current user information.
+        """
+        try:
+            user = gazu_client.user.is_authenticated()
+            if user:
+                logger.info(f"Current user: {user}")
+                return {
+                    "success": True,
+                    "user": user
+                }
+            else:
+                logger.error("No current user found.")
+                return {
+                    "success": False,
+                    "message": "No current user found."
+                }
+
+        except Exception as e:
+            logger.error(f"Error fetching current user: {e}")
+            return {
+                "success": False,
+                "message": f"Error fetching current user: {str(e)}"
+            }
+
+    @staticmethod
+    def get_user_by_id(user_id: str) -> dict:
+        """
+        Get user information by user ID.
+        """
+        try:
+            user = gazu_client.person.get_person(user_id)
+            if user:
+                logger.info(f"User data for ID {user_id}: {user}")
+                return {
+                    "success": True,
+                    "user": user
+                }
+            else:
+                logger.error(f"No user found with ID {user_id}.")
+                return {
+                    "success": False,
+                    "message": f"No user found with ID {user_id}."
+                }
+
+        except Exception as e:
+            logger.error(f"Error fetching user by ID {user_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Error fetching user by ID {user_id}: {str(e)}"
+            }
