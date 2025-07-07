@@ -5,7 +5,7 @@ from PyQt6.QtGui import QPixmap, QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtWidgets import QWidget, QTreeWidgetItem, QListWidgetItem, QPushButton, QHeaderView, QStyleOptionButton, \
     QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox
 
-from app.ui.main.page.launcher_ui import Ui_Form
+from app.ui.main.page.settings_ui import Ui_Form
 from app.core.app_states import AppState
 from app.services.asset import AssetService
 from app.services.files import FileService
@@ -16,37 +16,22 @@ from app.services.auth import AuthServices
 from app.services.kiyokai import KiyokaiService
 from app.services.launcher.launcher_data import LauncherData
 
-class LauncherHandler(QWidget):
+class SettingsHandler(QWidget):
     def __init__(self):
         super().__init__()
+
+        # Load UI
         self.ui = Ui_Form()
         self.ui.setupUi(self)
-
-        AppState().set_project_data(LauncherData().load_data())
 
         self.project_data = AppState().project_data
 
         self.set_combobox_data()
 
-        self.ui.pushButton_quickPull.clicked.connect(self.quick_pull)
+        self.ui.pushButton_nasSave.clicked.connect(self.on_create_nas)
 
-    def show_question_popup(self,title: str , message: str) -> bool:
-        app = QApplication.instance()
-        if not app:
-            app = QApplication(sys.argv)
-
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Icon.Question)
-        msg_box.setWindowTitle(title)
-        msg_box.setText(message)
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-
-        response = msg_box.exec()
-
-        return response == QMessageBox.StandardButton.Yes
 
 # PyQt Program =====================================================================================
-
     def set_combobox_data(self):
         """Set data for a combo box"""
 
@@ -82,6 +67,12 @@ class LauncherHandler(QWidget):
         self.ui.comboBox_project.currentIndexChanged.connect(self.on_project_changed)
         self.ui.comboBox_episode.currentIndexChanged.connect(self.on_episode_changed)
         self.ui.comboBox_sequence.currentIndexChanged.connect(self.on_sequence_changed)
+
+        # Set map drive
+        self.ui.comboBox_nasDrive.addItems([chr(letter) for letter in range(ord('A'), ord('Z') + 1)])
+
+        # Set NAS server list
+        self.set_combobox_nas_server()
 
     def on_project_changed(self, index):
         self.ui.comboBox_episode.clear()
@@ -205,37 +196,40 @@ class LauncherHandler(QWidget):
         else:
             self.ui.comboBox_shot.setEnabled(False)
 
-    def quick_pull(self):
-        """Quick pull data from the selected project, task, episode, sequence, and shot"""
+    def on_create_nas(self):
+        """Create NAS directory"""
+        try:
+            data = {
+                "name": self.ui.lineEdit_nasName.text(),
+                "host": self.ui.lineEdit_nasHost.text().strip(),
+                "port": self.ui.spinBox_nasPort.value(),
+                "username": self.ui.lineEdit_nasUsername.text(),
+                "password": self.ui.lineEdit_nasPassword.text(),
+                "project_path": self.ui.lineEdit_nasProjectPath.text().strip(),
+                "drive_letter": self.ui.comboBox_nasDrive.currentText().strip(),
+            }
 
-        project_index = self.ui.comboBox_project.currentIndex()
-        task_index = self.ui.comboBox_task.currentIndex()
-        episode_index = self.ui.comboBox_episode.currentIndex()
-        sequence_index = self.ui.comboBox_sequence.currentIndex()
-        shot_index = self.ui.comboBox_shot.currentIndex()
-
-        project_id = self.ui.comboBox_project.itemData(project_index)
-        task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
-        episode_id = self.ui.comboBox_episode.itemData(episode_index) if episode_index >= 0 else None
-        sequence_id = self.ui.comboBox_sequence.itemData(sequence_index) if sequence_index >= 0 else None
-        shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
-
-        if not project_id or not task_id or not episode_id or not sequence_id or not shot_id:
-            print("[-] Please select all required fields: Project, Task, Episode, Sequence, and Shot.")
-            return
-
-        path_data = KiyokaiService().get_master_shot_data_by_id(shot_id, task_id)
-
-        if not path_data or not path_data.get("success", False):
-            print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
-            if self.show_question_popup("MasterShot Missing", "Failed to get MasterShot data.\nDo you want to create a new MasterShot?"):
-                # Create new MasterShot logic here
-                print("[!] Creating new MasterShot...")
-                return
+            response = KiyokaiService.create_nas_server(data)
+            if response.get("success"):
+                QMessageBox.information(self, "Success", "NAS directory created successfully.")
             else:
-                print("[-] Quick pull operation cancelled.")
-                return
+                QMessageBox.warning(self, "Error", response.get("message", "Failed to create NAS directory."))
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
-        # Perform the quick pull operation here
-        print(f"Quick Pull: Project ID: {project_id}, Task ID: {task_id}, Episode ID: {episode_id}, "
-              f"Sequence ID: {sequence_id}, Shot ID: {shot_id}")
+    def set_combobox_nas_server(self):
+        """Set NAS server list in comboBox"""
+        try:
+            response = KiyokaiService.get_nas_server_list()
+            print("RESPONSE: ", response)
+            if response.get("success"):
+                nas_servers = response.get("data", [])
+                self.ui.comboBox_nas.clear()
+                self.ui.comboBox_nasSettings.clear()
+                for nas in nas_servers:
+                    self.ui.comboBox_nas.addItem(nas["name"], nas["id"])
+                    self.ui.comboBox_nasSettings.addItem(nas["name"], nas["id"])
+            else:
+                QMessageBox.warning(self, "Error", response.get("message", "Failed to fetch NAS servers."))
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")

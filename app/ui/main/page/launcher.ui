@@ -156,13 +156,25 @@
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout_quickSearch">
          <item row="4" column="0" colspan="2">
-          <widget class="QComboBox" name="comboBox_sequence"/>
+          <widget class="QComboBox" name="comboBox_sequence">
+           <property name="placeholderText">
+            <string>Sequence</string>
+           </property>
+          </widget>
          </item>
          <item row="3" column="0" colspan="2">
-          <widget class="QComboBox" name="comboBox_episode"/>
+          <widget class="QComboBox" name="comboBox_episode">
+           <property name="placeholderText">
+            <string>Episode</string>
+           </property>
+          </widget>
          </item>
          <item row="5" column="0" colspan="2">
-          <widget class="QComboBox" name="comboBox_shot"/>
+          <widget class="QComboBox" name="comboBox_shot">
+           <property name="placeholderText">
+            <string>Shot</string>
+           </property>
+          </widget>
          </item>
          <item row="7" column="0">
           <widget class="QPushButton" name="pushButton_quickPull">
@@ -186,13 +198,25 @@
           </widget>
          </item>
          <item row="2" column="0" colspan="2">
-          <widget class="QComboBox" name="comboBox_task"/>
+          <widget class="QComboBox" name="comboBox_task">
+           <property name="placeholderText">
+            <string>Task</string>
+           </property>
+          </widget>
          </item>
          <item row="1" column="0" colspan="2">
-          <widget class="QComboBox" name="comboBox_project"/>
+          <widget class="QComboBox" name="comboBox_project">
+           <property name="placeholderText">
+            <string>Project</string>
+           </property>
+          </widget>
          </item>
          <item row="6" column="0" colspan="2">
-          <widget class="QComboBox" name="comboBox_asset"/>
+          <widget class="QComboBox" name="comboBox_asset">
+           <property name="placeholderText">
+            <string>Asset</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>

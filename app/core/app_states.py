@@ -15,6 +15,7 @@ class AppState:
             cls.user_data = None
 
             cls.task_data = None
+            cls.project_data = None
 
             cls._instance.cookies = None
             cls._instance.username = None
@@ -36,6 +37,9 @@ class AppState:
 
     def set_task_data(self, task_data):
         self.task_data = task_data
+
+    def set_project_data(self, project_data):
+        self.project_data = project_data
 
     def is_logged_in(self):
         return self.cookies is not None

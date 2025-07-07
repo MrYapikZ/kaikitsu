@@ -25,25 +25,53 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_project"/>
+       <widget class="QComboBox" name="comboBox_project">
+        <property name="placeholderText">
+         <string>Project</string>
+        </property>
+       </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_task"/>
+       <widget class="QComboBox" name="comboBox_task">
+        <property name="placeholderText">
+         <string>Task</string>
+        </property>
+       </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_episode"/>
+       <widget class="QComboBox" name="comboBox_episode">
+        <property name="placeholderText">
+         <string>Episode</string>
+        </property>
+       </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_sequence"/>
+       <widget class="QComboBox" name="comboBox_sequence">
+        <property name="placeholderText">
+         <string>Sequence</string>
+        </property>
+       </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_shot"/>
+       <widget class="QComboBox" name="comboBox_shot">
+        <property name="placeholderText">
+         <string>Shot</string>
+        </property>
+       </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_asset"/>
+       <widget class="QComboBox" name="comboBox_asset">
+        <property name="placeholderText">
+         <string>Asset</string>
+        </property>
+       </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_nas"/>
+       <widget class="QComboBox" name="comboBox_nas">
+        <property name="placeholderText">
+         <string>Nas</string>
+        </property>
+       </widget>
       </item>
       <item>
        <spacer name="verticalSpacer_createUpdate">
@@ -59,7 +87,27 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_createOrUpdate">
+       <widget class="QWidget" name="widget_locateFile" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLineEdit" name="lineEdit_locateFile">
+           <property name="placeholderText">
+            <string>/FilePath</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_locateFile">
+           <property name="text">
+            <string>Locate</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_createUpdate">
         <property name="text">
          <string>Create Or Update</string>
         </property>
@@ -89,7 +137,14 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_nasPassword"/>
+          <widget class="QLineEdit" name="lineEdit_nasPassword">
+           <property name="echoMode">
+            <enum>QLineEdit::EchoMode::Password</enum>
+           </property>
+           <property name="placeholderText">
+            <string>NasPassword</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -112,7 +167,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_nasHost"/>
+          <widget class="QLineEdit" name="lineEdit_nasHost">
+           <property name="placeholderText">
+            <string>192.168.0.0</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -128,7 +187,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_nasName"/>
+          <widget class="QLineEdit" name="lineEdit_nasName">
+           <property name="placeholderText">
+            <string>NasName</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -144,7 +207,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_nasDrive"/>
+          <widget class="QComboBox" name="comboBox_nasDrive">
+           <property name="placeholderText">
+            <string>Z</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -160,13 +227,17 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_nasPort"/>
+          <widget class="QSpinBox" name="spinBox_nasPort"/>
          </item>
         </layout>
        </widget>
       </item>
       <item row="1" column="0" colspan="2">
-       <widget class="QComboBox" name="comboBox_nasSettings"/>
+       <widget class="QComboBox" name="comboBox_nasSettings">
+        <property name="placeholderText">
+         <string>Nas</string>
+        </property>
+       </widget>
       </item>
       <item row="2" column="1">
        <widget class="QWidget" name="widget_nasUsername" native="true">
@@ -179,7 +250,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_nasUsername"/>
+          <widget class="QLineEdit" name="lineEdit_nasUsername">
+           <property name="placeholderText">
+            <string>NasLogin</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -205,19 +280,30 @@
        </spacer>
       </item>
       <item row="5" column="0" colspan="2">
-       <widget class="QWidget" name="widget_nasProject" native="true">
-        <layout class="QVBoxLayout" name="verticalLayout_15">
+       <widget class="QWidget" name="widget_nasProjectPath" native="true">
+        <layout class="QVBoxLayout" name="verticalLayout_16">
          <item>
-          <widget class="QLabel" name="label_nasProject">
+          <widget class="QLabel" name="label_nasProjectPath">
            <property name="text">
-            <string>Project</string>
+            <string>Project Path</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_nasProject"/>
+          <widget class="QLineEdit" name="lineEdit_nasProjectPath">
+           <property name="placeholderText">
+            <string>/ProjectPath</string>
+           </property>
+          </widget>
          </item>
         </layout>
+       </widget>
+      </item>
+      <item row="8" column="0" colspan="2">
+       <widget class="QPushButton" name="pushButton_nasConnect">
+        <property name="text">
+         <string>Connect</string>
+        </property>
        </widget>
       </item>
      </layout>

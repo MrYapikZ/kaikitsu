@@ -100,3 +100,77 @@ class KiyokaiService:
                 "success": False,
                 "message": f"HTTP error: {str(e)}"
             }
+
+    @staticmethod
+    def create_nas_server(data: dict) -> dict:
+        """
+        Create a new NAS server in Kiyokai.
+        """
+        kiyokai_url = AppState().kiyokai_url
+        token = AppState().access_token
+
+        if not kiyokai_url or not token:
+            logger.error("Kiyokai URL is not set.")
+            return {
+                "success": False,
+                "message": "Kiyokai URL is not set."
+            }
+
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = httpx.post(f"{kiyokai_url}/api/v1/nas/create", json=data, headers=headers)
+            response.raise_for_status()  # Raise an error for bad responses
+            logger.info(f"NAS server created successfully: {response.json()}")
+            return response.json()
+        except httpx.RequestError as e:
+            logger.error(f"Request error while creating NAS server: {e}")
+            return {
+                "success": False,
+                "message": f"Request error: {str(e)}"
+            }
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error while creating NAS server: {e}")
+            return {
+                "success": False,
+                "message": f"HTTP error: {str(e)}"
+            }
+
+    @staticmethod
+    def get_nas_server_list() -> dict:
+        """
+        Fetch the list of NAS servers from Kiyokai.
+        """
+        kiyokai_url = AppState().kiyokai_url
+        token = AppState().access_token
+
+        if not kiyokai_url or not token:
+            logger.error("Kiyokai URL is not set.")
+            return {
+                "success": False,
+                "message": "Kiyokai URL is not set."
+            }
+
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = httpx.get(f"{kiyokai_url}/api/v1/nas/list", headers=headers)
+            response.raise_for_status()  # Raise an error for bad responses
+            logger.info(f"NAS server list retrieved successfully: {response.json()}")
+            return response.json()
+        except httpx.RequestError as e:
+            logger.error(f"Request error while fetching NAS server list: {e}")
+            return {
+                "success": False,
+                "message": f"Request error: {str(e)}"
+            }
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error while fetching NAS server list: {e}")
+            return {
+                "success": False,
+                "message": f"HTTP error: {str(e)}"
+            }

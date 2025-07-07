@@ -65,7 +65,6 @@ class LauncherData:
                     episode_data["sequences"].append(sequence_data)
                 project_data["episodes"].append(episode_data)
             all_data.append(project_data)
-        # print(f"All Data: {all_data}")
         return all_data
 
 

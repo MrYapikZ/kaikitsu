@@ -7,6 +7,7 @@ from PyQt6.QtGui import QPixmap, QDesktopServices
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QListWidgetItem
 
 from app.config import Settings
+from app.modules.main.handle_settings import SettingsHandler
 from app.modules.startup.handle_login import LoginHandler
 from app.modules.main.handle_launcher import LauncherHandler
 from app.modules.main.handle_dashboard import DashboardHandler
@@ -52,8 +53,7 @@ class MainUI(QMainWindow):
         # Set up tabs
         self.ui.tabWidget.addTab(DashboardHandler(), "Dashboard")
         self.ui.tabWidget.addTab(LauncherHandler(), "Launcher")
-
-        TaskService().get_table_task_list()
+        self.ui.tabWidget.addTab(SettingsHandler(), "Settings")
 
 # PyQt Program =====================================================================================
     def open_website(self, event):

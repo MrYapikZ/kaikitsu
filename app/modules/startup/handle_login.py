@@ -56,8 +56,10 @@ class LoginHandler(QDialog):  # <-- Use QDialog to make login a modal window
                 user_data = response.get("user", {})
                 self.username = user_data.get("full_name") or user_data.get("name") or username
 
+                print("[+] User data:", response)
+
                 # Store Data
-                AppState().set_access_token(response.get("access_token"))
+                AppState().set_access_token(user_data.get("access_token"))
                 AppState().set_user_data(user_data)
 
                 # Response

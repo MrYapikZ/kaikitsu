@@ -60,8 +60,6 @@ class TaskService:
                         logger.warning(f"Could not download avatar for user {user.get('id')}: {avatar_error}")
                         avatar_path = None
 
-                print("TASK:", task)
-
                 extracted_data.append({
                     "id": task.get("id"),
                     "project_name": task.get("project_name"),
