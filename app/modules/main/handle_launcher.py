@@ -16,7 +16,7 @@ from app.services.task import TaskService
 from app.services.auth import AuthServices
 from app.services.kiyokai import KiyokaiService
 from app.services.launcher.launcher_data import LauncherData
-from app.utils.open_file import open_file_with_dialog
+from app.utils.open_file import OpenFilePlatform
 
 class LauncherHandler(QWidget):
     def __init__(self):
@@ -147,6 +147,36 @@ class LauncherHandler(QWidget):
         for col in range(model.columnCount() - 1):
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(model.columnCount() - 1, QHeaderView.ResizeMode.Stretch)
+
+    def set_list_widget_versions(self, shot_id, task_id):
+        """Set data for the list widget versions"""
+
+        if not task_id or not shot_id:
+            print("[-] Please select Project, Task, and Shot to view versions.")
+            return
+
+        try:
+            # Fetch version data from KiyokaiService
+            version_data = KiyokaiService().get_version_shot_by_shot_id(shot_id, task_id)
+
+            if not version_data or not version_data.get("success", False):
+                print(f"[-] Failed to get version data for Shot ID: {shot_id}, Task ID: {task_id}")
+                return
+
+            versions = version_data.get("data", [])
+            if not versions:
+                print("[-] No versions found for this shot.")
+                return
+
+            for version in versions:
+                item = QListWidgetItem("v" + version["version_number"])
+                item.setData(Qt.ItemDataRole.UserRole, version["id"])
+                self.ui.listWidget_versions.addItem(item)
+
+            print(f"[+] Loaded {len(versions)} versions for Shot ID: {shot_id}")
+
+        except Exception as e:
+            print(f"[-] Error loading versions: {e}")
 
     def on_project_changed(self, index):
         self.ui.comboBox_episode.clear()
@@ -336,7 +366,7 @@ class LauncherHandler(QWidget):
             print(f"[-] File does not exist: {file_path}")
             return
 
-        open_file_with_dialog(file_path=file_path)
+        OpenFilePlatform.open_file_with_dialog(file_path=file_path)
 
     def navigate_to_settings_with_data(self, project_id, task_id, episode_id, sequence_id, shot_id):
         """Navigate to Settings tab and populate it with quick pull data"""

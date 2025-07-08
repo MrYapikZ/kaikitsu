@@ -16,6 +16,7 @@ from app.services.task import TaskService
 from app.services.auth import AuthServices
 from app.services.kiyokai import KiyokaiService
 from app.services.launcher.launcher_data import LauncherData
+from app.utils.version_shots import VersionShotService
 
 class SettingsHandler(QWidget):
     def __init__(self):
@@ -34,12 +35,19 @@ class SettingsHandler(QWidget):
         self.ui.pushButton_shotCreate.clicked.connect(self.on_create_master_shot)
         self.ui.pushButton_shotUpdate.clicked.connect(self.on_update_master_shot)
         self.ui.pushButton_shotLoad.clicked.connect(self.on_load_master_shots)
+        self.ui.toolButton_locateFolder.clicked.connect(self.open_folder_dialog)
 
     def open_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select a File")
         if file_path:
             self.ui.lineEdit_locateFile.setText(file_path)
             print("Selected file:", file_path)
+
+    def open_folder_dialog(self):
+        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder")
+        if folder_path:
+            self.ui.lineEdit_locateFolder.setText(folder_path)
+            print("Selected folder:", folder_path)
 
     def show_question_popup(self,title: str , message: str) -> bool:
         app = QApplication.instance()
@@ -262,57 +270,16 @@ class SettingsHandler(QWidget):
     def on_create_master_shot(self):
         """Create Master Shot"""
         try:
-            project_index = self.ui.comboBox_project.currentIndex()
-            task_index = self.ui.comboBox_task.currentIndex()
-            episode_index = self.ui.comboBox_episode.currentIndex()
-            sequence_index = self.ui.comboBox_sequence.currentIndex()
-            shot_index = self.ui.comboBox_shot.currentIndex()
-            nas_index = self.ui.comboBox_nas.currentIndex()
-
-            project_id = self.ui.comboBox_project.itemData(project_index)
-            project_name = self.ui.comboBox_project.itemText(project_index)
-
-            task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
-            task_name = self.ui.comboBox_task.itemText(task_index) if task_index >= 0 else None
-
-            episode_id = self.ui.comboBox_episode.itemData(episode_index) if episode_index >= 0 else None
-            episode_name = self.ui.comboBox_episode.itemText(episode_index) if episode_index >= 0 else None
-
-            sequence_id = self.ui.comboBox_sequence.itemData(sequence_index) if sequence_index >= 0 else None
-            sequence_name = self.ui.comboBox_sequence.itemText(sequence_index) if sequence_index >= 0 else None
-
-            shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
-            shot_name = self.ui.comboBox_shot.itemText(shot_index) if shot_index >= 0 else None
-
-            nas_id = self.ui.comboBox_nas.itemData(nas_index) if nas_index >= 0 else None
-            nas_name = self.ui.comboBox_nas.itemText(nas_index) if nas_index >= 0 else None
-
-            file_path = self.ui.lineEdit_locateFile.text()
-            file_name = file_path.split("/")[-1] if file_path else None
-
-            print("USER DATA:", AppState().user_data)
-
-            data = {
-                "file_name": file_name,
-                "file_path": file_path,
-                "edit_user_id": AppState().user_data.get("user").get("id"),
-                "edit_user_name": AppState().user_data.get("user").get("full_name"),
-                "project_id": project_id,
-                "project_name": project_name,
-                "task_id": task_id,
-                "task_name": task_name,
-                "episode_id": episode_id,
-                "episode_name": episode_name,
-                "sequence_id": sequence_id,
-                "sequence_name": sequence_name,
-                "shot_id": shot_id,
-                "shot_name": shot_name,
-                "nas_server_id": nas_id,
-            }
+            data = self.get_update_create_data()
 
             response = KiyokaiService.create_master_shot(data)
             if response.get("success"):
-                QMessageBox.information(self, "Success", "Master shot created successfully.")
+                # QMessageBox.information(self, "Success", "Master shot created successfully.")
+                if self.ui.lineEdit_locateFolder.text().strip():
+                    if self.show_question_popup("Create Version Shot?", "Do you also want to create a version shot for this master file?"):
+                        self.pop_version_data(data, response.get("data").get("id"))
+                else:
+                    QMessageBox.information(self, "Success", "Master shot created successfully. Please load the master shot to create a version shot.")
             elif response.get("exists"):
                 existing = response.get("data")
                 QMessageBox.warning(self, "Warning", f"Master shot already exists:\n\n"
@@ -346,7 +313,13 @@ class SettingsHandler(QWidget):
 
             response = KiyokaiService.update_master_shot(shot_id=shot_id, task_id=task_id, data=data)
             if response.get("success"):
-                QMessageBox.information(self, "Success", "Master shot updated successfully.")
+                # QMessageBox.information(self, "Success", "Master shot updated successfully.")
+                if self.ui.lineEdit_locateFolder.text().strip():
+                    if self.show_question_popup("Update Version Shot?", "Do you also want to update a version shot for this master file?"):
+                        update_data = self.get_update_create_data()
+                        self.pop_version_data(update_data, response.get("data").get("id"))
+                else:
+                    QMessageBox.information(self, "Success", "Master shot created successfully. Please load the master shot to create a version shot.")
             else:
                 print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
                 if self.show_question_popup("MasterShot Missing",
@@ -376,6 +349,88 @@ class SettingsHandler(QWidget):
                 QMessageBox.warning(self, "Error", response.get("message", "Failed to load master shots."))
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+
+    def update_version_shot(self, data: dict):
+        """Update Version Shot"""
+        try:
+            version_folder = self.ui.lineEdit_locateFolder.text()
+
+            normal, backup = VersionShotService.get_version_shot_data(version_folder)
+
+            for version_number, files in normal.items():
+                if not files:
+                    continue
+
+                # Get the only item from the dict
+                file_name, file_path = next(iter(files.items()))
+
+                version_data = data.copy()
+                version_data["file_name"] = file_name
+                version_data["file_path"] = file_path
+                version_data["version_number"] = version_number
+
+                print("VERASION DATA: ", version_data)
+                response = KiyokaiService.create_version_shot(data=version_data)
+                if response.get("success"):
+                    print(f"[+] Version {version_number} - {file_name} created.")
+                else:
+                    print(f"[-] Failed to create Version {version_number}: {response.get('message', 'Unknown error')}")
+            QMessageBox.information(self, "Success", "Version updated successfully.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+
+    def get_update_create_data(self):
+        """Get data for update or create Master Shot"""
+        try:
+            project_index = self.ui.comboBox_project.currentIndex()
+            task_index = self.ui.comboBox_task.currentIndex()
+            episode_index = self.ui.comboBox_episode.currentIndex()
+            sequence_index = self.ui.comboBox_sequence.currentIndex()
+            shot_index = self.ui.comboBox_shot.currentIndex()
+            nas_index = self.ui.comboBox_nas.currentIndex()
+
+            project_id = self.ui.comboBox_project.itemData(project_index)
+            project_name = self.ui.comboBox_project.itemText(project_index)
+
+            task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
+            task_name = self.ui.comboBox_task.itemText(task_index) if task_index >= 0 else None
+
+            episode_id = self.ui.comboBox_episode.itemData(episode_index) if episode_index >= 0 else None
+            episode_name = self.ui.comboBox_episode.itemText(episode_index) if episode_index >= 0 else None
+
+            sequence_id = self.ui.comboBox_sequence.itemData(sequence_index) if sequence_index >= 0 else None
+            sequence_name = self.ui.comboBox_sequence.itemText(sequence_index) if sequence_index >= 0 else None
+
+            shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
+            shot_name = self.ui.comboBox_shot.itemText(shot_index) if shot_index >= 0 else None
+
+            nas_id = self.ui.comboBox_nas.itemData(nas_index) if nas_index >= 0 else None
+            nas_name = self.ui.comboBox_nas.itemText(nas_index) if nas_index >= 0 else None
+
+            file_path = self.ui.lineEdit_locateFile.text()
+            file_name = file_path.split("/")[-1] if file_path else None
+
+            data = {
+                "file_name": file_name,
+                "file_path": file_path,
+                "edit_user_id": AppState().user_data.get("user").get("id"),
+                "edit_user_name": AppState().user_data.get("user").get("full_name"),
+                "project_id": project_id,
+                "project_name": project_name,
+                "task_id": task_id,
+                "task_name": task_name,
+                "episode_id": episode_id,
+                "episode_name": episode_name,
+                "sequence_id": sequence_id,
+                "sequence_name": sequence_name,
+                "shot_id": shot_id,
+                "shot_name": shot_name,
+                "nas_server_id": nas_id,
+            }
+
+            return data
+        except Exception as e:
+            print(f"[-] Error getting data for update/create Master Shot: {e}")
 
     def populate_from_quick_pull(self, project_id, task_id, episode_id, sequence_id, shot_id):
         """Populate Settings form with quick pull data for creating new MasterShot"""
@@ -429,3 +484,13 @@ class SettingsHandler(QWidget):
         except Exception as e:
             print(f"[-] Error populating Settings form: {e}")
 
+# Small Function =====================================================================================
+
+    def pop_version_data(self, data, mastershot_id):
+        """Pop and update version data"""
+        version_data = data.copy()
+        version_data.pop("file_name", None)
+        version_data.pop("file_path", None)
+        version_data.pop("nas_server_id", None)
+        version_data["master_shot_id"] = mastershot_id
+        self.update_version_shot(version_data)

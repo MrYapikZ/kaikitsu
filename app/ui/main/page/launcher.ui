@@ -120,16 +120,16 @@
      <item>
       <layout class="QGridLayout" name="gridLayout_left">
        <item row="1" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout_version">
+        <layout class="QVBoxLayout" name="verticalLayout_versions">
          <item>
-          <widget class="QLabel" name="label_version">
+          <widget class="QLabel" name="label_versions">
            <property name="text">
             <string>Version</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QListWidget" name="listWidget_version">
+          <widget class="QListWidget" name="listWidget_versions">
            <property name="minimumSize">
             <size>
              <width>200</width>

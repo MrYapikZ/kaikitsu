@@ -139,6 +139,80 @@ class KiyokaiService:
             }
 
     @staticmethod
+    def get_version_shot_by_shot_id(shot_id: str, task_id: str) -> dict:
+        """
+        Fetch version shot data by shot ID from Kiyokai API.
+        """
+        kiyokai_url = AppState().kiyokai_url
+        token = AppState().access_token
+
+        if not kiyokai_url or not token:
+            logger.error("Kiyokai URL is not set.")
+            return {
+                "success": False,
+                "message": "Kiyokai URL is not set."
+            }
+
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = httpx.get(f"{kiyokai_url}/api/v1/shots/version/list/{shot_id}/tasks/{task_id}", headers=headers)
+            response.raise_for_status()  # Raise an error for bad responses
+            logger.info(f"Version shot data retrieved successfully: {response.json()}")
+            return response.json()
+        except httpx.RequestError as e:
+            logger.error(f"Request error while fetching version shot data: {e}")
+            return {
+                "success": False,
+                "message": f"Request error: {str(e)}"
+            }
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error while fetching version shot data: {e}")
+            return {
+                "success": False,
+                "message": f"HTTP error: {str(e)}"
+            }
+
+    @staticmethod
+    def create_version_shot(data: dict) -> dict:
+        """
+        Create a new version shot in Kiyokai.
+        """
+        kiyokai_url = AppState().kiyokai_url
+        token = AppState().access_token
+
+        if not kiyokai_url or not token:
+            logger.error("Kiyokai URL is not set.")
+            return {
+                "success": False,
+                "message": "Kiyokai URL is not set."
+            }
+
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = httpx.post(f"{kiyokai_url}/api/v1/shots/versionshots/create", json=data, headers=headers)
+            response.raise_for_status()  # Raise an error for bad responses
+            logger.info(f"Version shot created successfully: {response.json()}")
+            return response.json()
+        except httpx.RequestError as e:
+            logger.error(f"Request error while creating version shot: {e}")
+            return {
+                "success": False,
+                "message": f"Request error: {str(e)}"
+            }
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error while creating version shot: {e}")
+            return {
+                "success": False,
+                "message": f"HTTP error: {str(e)}"
+            }
+
+    @staticmethod
     def create_nas_server(data: dict) -> dict:
         """
         Create a new NAS server in Kiyokai.
