@@ -44,46 +44,46 @@
      <item>
       <layout class="QGridLayout" name="gridLayout_center">
        <item row="1" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout_function">
-         <item>
-          <widget class="QLabel" name="label_function">
+        <layout class="QGridLayout" name="gridLayout_function">
+         <item row="4" column="1">
+          <widget class="QPushButton" name="pushButton_push">
            <property name="text">
-            <string>Function</string>
+            <string>Push(master)</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QLineEdit" name="lineEdit_label">
-           <property name="placeholderText">
-            <string>Label</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTextEdit" name="textEdit_note">
-           <property name="placeholderText">
-            <string>Note</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_preview">
+         <item row="4" column="0">
+          <widget class="QPushButton" name="pushButton_commit">
            <property name="text">
-            <string>Preview</string>
+            <string>Commit(version)</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="3" column="0" colspan="2">
           <widget class="QPushButton" name="pushButton_open">
            <property name="text">
             <string>Open</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_save">
+         <item row="2" column="0" colspan="2">
+          <widget class="QTextEdit" name="textEdit_note">
+           <property name="placeholderText">
+            <string>Note</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QLineEdit" name="lineEdit_label">
+           <property name="placeholderText">
+            <string>Label</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="2">
+          <widget class="QLabel" name="label_function">
            <property name="text">
-            <string>Save</string>
+            <string>Function</string>
            </property>
           </widget>
          </item>
@@ -177,9 +177,9 @@
           </widget>
          </item>
          <item row="7" column="1">
-          <widget class="QPushButton" name="pushButton_quickOpen">
+          <widget class="QPushButton" name="pushButton_quickRefresh">
            <property name="text">
-            <string>Open</string>
+            <string>Refresh</string>
            </property>
           </widget>
          </item>

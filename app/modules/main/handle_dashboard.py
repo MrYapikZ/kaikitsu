@@ -10,6 +10,7 @@ from app.services.task import TaskService
 from app.services.kiyokai import KiyokaiService
 from app.ui.main.page.dashboard_ui import Ui_Form
 from app.services.auth import AuthServices
+from app.utils.pyqt.text_wrap_delegate import TextWrapDelegate
 
 class DashboardHandler(QWidget):
     def __init__(self):
@@ -209,12 +210,22 @@ class DashboardHandler(QWidget):
                 self.ui.label_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             self.ui.tableView_details.setModel(model)
-            self.ui.tableView_details.verticalHeader().setVisible(False)
+            # self.ui.tableView_details.verticalHeader().setVisible(False)
+            self.ui.tableView_details.setWordWrap(True)
+
+            wrap_delegate = TextWrapDelegate(self.ui.tableView_details)
+            self.ui.tableView_details.setItemDelegateForColumn(1, wrap_delegate)
+
             header = self.ui.tableView_details.horizontalHeader()
             self.ui.tableView_details.resizeColumnsToContents()
             for col in range(model.columnCount() - 1):
                 header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
             header.setSectionResizeMode(model.columnCount() - 1, QHeaderView.ResizeMode.Stretch)
+
+            self.ui.tableView_details.resizeRowsToContents()
+            self.ui.tableView_details.verticalHeader().setSectionResizeMode(
+                QHeaderView.ResizeMode.Interactive
+            )
 
         details_widget(task_id)
 

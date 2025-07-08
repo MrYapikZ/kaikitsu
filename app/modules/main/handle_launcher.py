@@ -17,6 +17,7 @@ from app.services.auth import AuthServices
 from app.services.kiyokai import KiyokaiService
 from app.services.launcher.launcher_data import LauncherData
 from app.utils.open_file import OpenFilePlatform
+from app.utils.pyqt.text_wrap_delegate import TextWrapDelegate
 
 class LauncherHandler(QWidget):
     def __init__(self):
@@ -28,10 +29,14 @@ class LauncherHandler(QWidget):
 
         self.project_data = AppState().project_data
 
+        self.master_shot_id = ''
+
         self.set_combobox_data()
 
         self.ui.pushButton_quickPull.clicked.connect(self.on_quick_pull)
         self.ui.pushButton_open.clicked.connect(self.on_open_file)
+        self.ui.listWidget_versions.itemDoubleClicked.connect(self.on_version_item_double_clicked)
+        self.ui.pushButton_commit.clicked.connect(self.on_commit_version)
 
     def show_question_popup(self,title: str , message: str) -> bool:
         app = QApplication.instance()
@@ -86,7 +91,7 @@ class LauncherHandler(QWidget):
         self.ui.comboBox_episode.currentIndexChanged.connect(self.on_episode_changed)
         self.ui.comboBox_sequence.currentIndexChanged.connect(self.on_sequence_changed)
 
-    def set_tableview_detail(self, master_shot_data):
+    def set_tableview_detail(self, master_shot_data, is_master_shot=True):
         if not master_shot_data:
             print("[-] No master shot data provided")
             return
@@ -95,8 +100,10 @@ class LauncherHandler(QWidget):
         model.setHorizontalHeaderLabels(["Key", "Value"])
 
         field_map = {
+            "id": "ID",
             "file_name": "File Name",
             "file_path": "File Path",
+            "version_folder": "Version Folder",
             "project_name": "Project",
             "episode_name": "Episode",
             "sequence_name": "Sequence",
@@ -107,6 +114,18 @@ class LauncherHandler(QWidget):
             "updated_at": "Updated At",
         }
 
+        if not is_master_shot:
+            additional_field_map = {
+                "version_number": "Version",
+                "commited": "Committed",
+                "locked": "Locked",
+                "locked_by_user_name": "Locked By",
+                "label": "Label",
+                "notes": "Notes",
+                "program": "Program",
+            }
+            field_map.update(additional_field_map)
+
         for key, label in field_map.items():
             value = master_shot_data.get(key, "")
             item_key = QStandardItem(label)
@@ -115,24 +134,25 @@ class LauncherHandler(QWidget):
             item_value.setEditable(False)
             model.appendRow([item_key, item_value])
 
-        # Add NAS server info if exists
-        nas_data = master_shot_data.get("nas_server")
-        if nas_data:
-            nas_field_map = {
-                "name": "NAS Name",
-                # "host": "NAS Host",
-                # "port": "NAS Port",
-                # "username": "NAS Username",
-                # "project_path": "NAS Project Path",
-                "drive_letter": "NAS Drive Letter",
-            }
-            for key, label in nas_field_map.items():
-                value = nas_data.get(key, "")
-                item_key = QStandardItem(label)
-                item_value = QStandardItem(str(value))
-                item_key.setEditable(False)
-                item_value.setEditable(False)
-                model.appendRow([item_key, item_value])
+        if is_master_shot:
+            # Add NAS server info if exists
+            nas_data = master_shot_data.get("nas_server")
+            if nas_data:
+                nas_field_map = {
+                    "name": "NAS Name",
+                    # "host": "NAS Host",
+                    # "port": "NAS Port",
+                    # "username": "NAS Username",
+                    # "project_path": "NAS Project Path",
+                    "drive_letter": "NAS Drive Letter",
+                }
+                for key, label in nas_field_map.items():
+                    value = nas_data.get(key, "")
+                    item_key = QStandardItem(label)
+                    item_value = QStandardItem(str(value))
+                    item_key.setEditable(False)
+                    item_value.setEditable(False)
+                    model.appendRow([item_key, item_value])
 
         # Clear preview
         # self.ui.label_preview.clear()
@@ -141,12 +161,22 @@ class LauncherHandler(QWidget):
 
         # Set table
         self.ui.tableView_metadataContent.setModel(model)
-        self.ui.tableView_metadataContent.verticalHeader().setVisible(False)
+        # self.ui.tableView_metadataContent.verticalHeader().setVisible(False)
+        self.ui.tableView_metadataContent.setWordWrap(True)
+
+        wrap_delegate = TextWrapDelegate(self.ui.tableView_metadataContent)
+        self.ui.tableView_metadataContent.setItemDelegateForColumn(1, wrap_delegate)
+
         header = self.ui.tableView_metadataContent.horizontalHeader()
         self.ui.tableView_metadataContent.resizeColumnsToContents()
         for col in range(model.columnCount() - 1):
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(model.columnCount() - 1, QHeaderView.ResizeMode.Stretch)
+
+        self.ui.tableView_metadataContent.resizeRowsToContents()
+        self.ui.tableView_metadataContent.verticalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Interactive
+        )
 
     def set_list_widget_versions(self, shot_id, task_id):
         """Set data for the list widget versions"""
@@ -169,7 +199,7 @@ class LauncherHandler(QWidget):
                 return
 
             for version in versions:
-                item = QListWidgetItem("v" + version["version_number"])
+                item = QListWidgetItem(f"v{version["version_number"]}")
                 item.setData(Qt.ItemDataRole.UserRole, version["id"])
                 self.ui.listWidget_versions.addItem(item)
 
@@ -320,6 +350,7 @@ class LauncherHandler(QWidget):
             return
 
         path_data = KiyokaiService().get_master_shot_data_by_id(shot_id, task_id)
+        self.master_shot_data = path_data.get("data", {})
 
         if not path_data or not path_data.get("success", False):
             print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
@@ -333,6 +364,7 @@ class LauncherHandler(QWidget):
                 return
 
         self.set_tableview_detail(path_data.get("data", {}))
+        self.set_list_widget_versions(shot_id, task_id)
 
         # Perform the quick pull operation here
         print(f"Quick Pull: Project ID: {project_id}, Task ID: {task_id}, Episode ID: {episode_id}, "
@@ -367,6 +399,127 @@ class LauncherHandler(QWidget):
             return
 
         OpenFilePlatform.open_file_with_dialog(file_path=file_path)
+
+    def on_preview_open(self):
+        """Pull master shot data and display in table view"""
+        project_index = self.ui.comboBox_project.currentIndex()
+        task_index = self.ui.comboBox_task.currentIndex()
+        episode_index = self.ui.comboBox_episode.currentIndex()
+        sequence_index = self.ui.comboBox_sequence.currentIndex()
+        shot_index = self.ui.comboBox_shot.currentIndex()
+
+        project_id = self.ui.comboBox_project.itemData(project_index)
+        task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
+        episode_id = self.ui.comboBox_episode.itemData(episode_index) if episode_index >= 0 else None
+        sequence_id = self.ui.comboBox_sequence.itemData(sequence_index) if sequence_index >= 0 else None
+        shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
+
+        if not project_id or not task_id or not shot_id:
+            print("[-] Please select all required fields: Project, Task, and Shot.")
+            return
+
+        try:
+            # Pull data from KiyokaiService
+            print(f"[+] Pulling master shot data for Shot ID: {shot_id}, Task ID: {task_id}")
+            path_data = KiyokaiService().get_master_shot_data_by_id(shot_id, task_id)
+
+            if path_data and path_data.get("success", False):
+                # Display data in table view
+                self.set_tableview_detail(path_data.get("data", {}))
+                print(f"[+] Master shot data loaded successfully")
+            else:
+                print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
+                if self.show_question_popup("MasterShot Missing",
+                                            "Failed to get MasterShot data.\nDo you want to create a new MasterShot?"):
+                    # Navigate to Settings tab and populate with quick pull data for creating new MasterShot
+                    print("[!] Creating new MasterShot...")
+                    self.navigate_to_settings_with_data(project_id, task_id, episode_id, sequence_id, shot_id)
+                    return
+                else:
+                    print("[-] Preview operation cancelled.")
+                    return
+
+        except Exception as e:
+            print(f"[-] Error pulling master shot data: {e}")
+            # Clear the table on error
+            model = QStandardItemModel()
+            model.setHorizontalHeaderLabels(["Key", "Value"])
+            self.ui.tableView_metadataContent.setModel(model)
+
+    def on_version_item_double_clicked(self, item: QListWidgetItem):
+        version_id = item.data(Qt.ItemDataRole.UserRole)
+
+        try:
+            # Fetch version data from KiyokaiService
+            version_data = KiyokaiService().get_version_shot_by_version_id(version_id)
+
+            if not version_data or not version_data.get("success", False):
+                print(f"[-] Failed to get version data for Version ID: {version_id}")
+                return
+
+            self.master_shot_id = version_data.get("data", {}).get("master_shot_id", "")
+            self.set_tableview_detail(version_data.get("data", {}), False)
+
+        except Exception as e:
+            print(f"[-] Error opening version file: {e}")
+            # Optionally, you can show a message box to the user
+            QMessageBox.critical(self, "Error", f"Failed to open version file: {str(e)}")
+
+    def on_commit_version(self):
+        """Commit the selected version"""
+        try:
+            details_model = self.ui.tableView_metadataContent.model()
+            if not details_model:
+                print("[-] No details available. Please select a task first to populate details.")
+                return
+
+            # Extract task_id from details table
+            id = None
+            for row in range(details_model.rowCount()):
+                key_index = details_model.index(row, 0)
+                value_index = details_model.index(row, 1)
+                key = details_model.data(key_index)
+                value = details_model.data(value_index)
+
+                if key == "ID":
+                    id = value
+                    break
+
+            if not id:
+                print("[-] No Task ID found in details table")
+                return
+
+            data = {
+                "edit_user_id": AppState().user_data.get("user").get("id"),
+                "edit_user_name": AppState().user_data.get("user").get("full_name"),
+                "locked": False,
+                "locked_by_user_id": "",
+                "locked_by_user_name": "",
+                "label": self.ui.lineEdit_label.text(),
+                "notes": self.ui.textEdit_note.toPlainText(),
+            }
+
+            try:
+                # Fetch version shot data using the ID
+                version_shot_data = KiyokaiService().update_version_shot_by_version_id(id, data)
+                if not version_shot_data or not version_shot_data.get("success", False):
+                    print(f"[-] Failed to get version shot data for ID: {id}")
+                    return
+                else:
+                    QMessageBox.information(self, "Success", "Version shot data fetched successfully.")
+            except Exception as e:
+                print(f"[-] Error fetching version shot data: {e}")
+                QMessageBox.critical(self, "Error", f"Select version to commit version: {str(e)}")
+                return
+
+            # Here you would typically commit the version using the fetched data
+            # For demonstration, we will just print the data
+            print(f"[+] Committing version for Version Shot ID: {self.master_shot_id}")
+
+        except Exception as e:
+            print(f"[-] Error committing version: {e}")
+            # Optionally, you can show a message box to the user
+            QMessageBox.critical(self, "Error", f"Failed to commit version: {str(e)}")
 
     def navigate_to_settings_with_data(self, project_id, task_id, episode_id, sequence_id, shot_id):
         """Navigate to Settings tab and populate it with quick pull data"""
@@ -449,54 +602,12 @@ class LauncherHandler(QWidget):
 
             # Display master shot data if available
             if master_shot_data:
+                self.master_shot_id = master_shot_data.get("id", "")
                 self.set_tableview_detail(master_shot_data)
+                self.set_list_widget_versions(shot_id, task_id)
 
             print("[+] Launcher form populated successfully with task data")
 
         except Exception as e:
             print(f"[-] Error populating Launcher form: {e}")
 
-    def on_preview_open(self):
-        """Pull master shot data and display in table view"""
-        project_index = self.ui.comboBox_project.currentIndex()
-        task_index = self.ui.comboBox_task.currentIndex()
-        episode_index = self.ui.comboBox_episode.currentIndex()
-        sequence_index = self.ui.comboBox_sequence.currentIndex()
-        shot_index = self.ui.comboBox_shot.currentIndex()
-
-        project_id = self.ui.comboBox_project.itemData(project_index)
-        task_id = self.ui.comboBox_task.itemData(task_index) if task_index >= 0 else None
-        episode_id = self.ui.comboBox_episode.itemData(episode_index) if episode_index >= 0 else None
-        sequence_id = self.ui.comboBox_sequence.itemData(sequence_index) if sequence_index >= 0 else None
-        shot_id = self.ui.comboBox_shot.itemData(shot_index) if shot_index >= 0 else None
-
-        if not project_id or not task_id or not shot_id:
-            print("[-] Please select all required fields: Project, Task, and Shot.")
-            return
-
-        try:
-            # Pull data from KiyokaiService
-            print(f"[+] Pulling master shot data for Shot ID: {shot_id}, Task ID: {task_id}")
-            path_data = KiyokaiService().get_master_shot_data_by_id(shot_id, task_id)
-
-            if path_data and path_data.get("success", False):
-                # Display data in table view
-                self.set_tableview_detail(path_data.get("data", {}))
-                print(f"[+] Master shot data loaded successfully")
-            else:
-                print(f"[-] Failed to get path data for Shot ID: {shot_id}, Task ID: {task_id}")
-                if self.show_question_popup("MasterShot Missing", "Failed to get MasterShot data.\nDo you want to create a new MasterShot?"):
-                    # Navigate to Settings tab and populate with quick pull data for creating new MasterShot
-                    print("[!] Creating new MasterShot...")
-                    self.navigate_to_settings_with_data(project_id, task_id, episode_id, sequence_id, shot_id)
-                    return
-                else:
-                    print("[-] Preview operation cancelled.")
-                    return
-
-        except Exception as e:
-            print(f"[-] Error pulling master shot data: {e}")
-            # Clear the table on error
-            model = QStandardItemModel()
-            model.setHorizontalHeaderLabels(["Key", "Value"])
-            self.ui.tableView_metadataContent.setModel(model)
