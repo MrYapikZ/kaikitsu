@@ -303,10 +303,12 @@ class SettingsHandler(QWidget):
 
             file_path = self.ui.lineEdit_locateFile.text()
             file_name = file_path.split("/")[-1] if file_path else None
+            version_folder = self.ui.lineEdit_locateFolder.text()
 
             data = {
                 "file_name": file_name,
                 "file_path": file_path,
+                "version_folder": version_folder,
                 "edit_user_id": AppState().user_data.get("user").get("id"),
                 "edit_user_name": AppState().user_data.get("user").get("full_name"),
             }
@@ -345,6 +347,7 @@ class SettingsHandler(QWidget):
             if response.get("success"):
                 master_shots = response.get("data", {})
                 self.ui.lineEdit_locateFile.setText(os.path.join(master_shots.get("file_path", ""), master_shots.get("file_name", "")) ) # NEED TO FIX
+                self.ui.lineEdit_locateFolder.setText(master_shots.get("version_folder", ""))  # NEED TO FIX
             else:
                 QMessageBox.warning(self, "Error", response.get("message", "Failed to load master shots."))
         except Exception as e:
@@ -369,7 +372,6 @@ class SettingsHandler(QWidget):
                 version_data["file_path"] = file_path
                 version_data["version_number"] = version_number
 
-                print("VERASION DATA: ", version_data)
                 response = KiyokaiService.create_version_shot(data=version_data)
                 if response.get("success"):
                     print(f"[+] Version {version_number} - {file_name} created.")
@@ -409,10 +411,12 @@ class SettingsHandler(QWidget):
 
             file_path = self.ui.lineEdit_locateFile.text()
             file_name = file_path.split("/")[-1] if file_path else None
+            version_folder = self.ui.lineEdit_locateFolder.text()
 
             data = {
                 "file_name": file_name,
                 "file_path": file_path,
+                "version_folder": version_folder,
                 "edit_user_id": AppState().user_data.get("user").get("id"),
                 "edit_user_name": AppState().user_data.get("user").get("full_name"),
                 "project_id": project_id,
@@ -485,12 +489,12 @@ class SettingsHandler(QWidget):
             print(f"[-] Error populating Settings form: {e}")
 
 # Small Function =====================================================================================
-
     def pop_version_data(self, data, mastershot_id):
         """Pop and update version data"""
         version_data = data.copy()
         version_data.pop("file_name", None)
         version_data.pop("file_path", None)
         version_data.pop("nas_server_id", None)
+        version_data.pop("version_folder", None)
         version_data["master_shot_id"] = mastershot_id
         self.update_version_shot(version_data)
