@@ -2,6 +2,8 @@ import os
 import platform
 import subprocess
 
+from app.utils.pyqt.select_blender import SelectBlenderService
+
 
 class OpenFilePlatform:
     @staticmethod
@@ -51,8 +53,17 @@ class OpenFilePlatform:
                     print(f"[!] Failed to open file with selected app: {e}")
 
             elif system == "Linux":
-                # Best effort: this opens with default app
-                subprocess.run(["xdg-open", file_path])
+                try:
+                    subprocess.run(["xdg-open", file_path], check=True)
+                except subprocess.CalledProcessError:
+                    print("[!] xdg-open failed. Trying Blender from Steam...")
+
+                    blender_path = SelectBlenderService().select_blender()
+
+                    if os.path.exists(blender_path):
+                        subprocess.run([blender_path, file_path])
+                    else:
+                        print("[!] Blender not found in Steam folder.")
 
             else:
                 print(f"[!] Unsupported platform: {system}")

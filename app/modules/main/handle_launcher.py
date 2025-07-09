@@ -21,6 +21,7 @@ from app.services.launcher.launcher_data import LauncherData
 from app.utils.open_file import OpenFilePlatform
 from app.utils.pyqt.text_wrap_delegate import TextWrapDelegate
 from app.utils.blender import BlenderService
+from app.utils.pyqt.select_blender import SelectBlenderService
 
 class LauncherHandler(QWidget):
     def __init__(self):
@@ -794,14 +795,7 @@ class LauncherHandler(QWidget):
 
             if file_ext == ".blend":
                 # Ask user to locate Blender executable
-                blender_path, _ = QFileDialog.getOpenFileName(
-                    self, "Select Blender Executable", "", "Blender Executable (*.exe *.app *.bin);;All Files (*)"
-                )
-                if not blender_path:
-                    QMessageBox.warning(self, "Missing Blender", "Blender executable not selected.")
-                    return
-                if blender_path.endswith(".app"):
-                    blender_path = os.path.join(blender_path, "Contents", "MacOS", "Blender")
+                blender_path = SelectBlenderService(parent=self).select_blender()
                 blender_save_as = BlenderService().save_as_blend_file(blender_path, master_file_path, version_file_path)
                 if blender_save_as.get("success", True):
                     print(f"[+] Blender project saved as: {version_file_path}")
