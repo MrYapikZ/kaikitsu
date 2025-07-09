@@ -795,7 +795,7 @@ class LauncherHandler(QWidget):
             if file_ext == ".blend":
                 # Ask user to locate Blender executable
                 blender_path, _ = QFileDialog.getOpenFileName(
-                    self, "Select Blender Executable", "", "Blender Executable (*.exe *.app *.bin)"
+                    self, "Select Blender Executable", "", "Blender Executable (*.exe *.app *.bin);;All Files (*.*)"
                 )
                 if not blender_path:
                     QMessageBox.warning(self, "Missing Blender", "Blender executable not selected.")
