@@ -66,6 +66,43 @@ class KiyokaiService:
             }
 
     @staticmethod
+    def get_master_shot_by_master_shot_id(master_shot_id: str) -> dict:
+        """
+        Fetch master shot data by master shot ID from Kiyokai API.
+        """
+        kiyokai_url = AppState().kiyokai_url
+        token = AppState().access_token
+
+        if not kiyokai_url or not token:
+            logger.error("Kiyokai URL is not set.")
+            return {
+                "success": False,
+                "message": "Kiyokai URL is not set."
+            }
+
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = httpx.get(f"{kiyokai_url}/api/v1/shots/mastershots/{master_shot_id}", headers=headers)
+            response.raise_for_status()  # Raise an error for bad responses
+            logger.info(f"Master shot data retrieved successfully: {response.json()}")
+            return response.json()
+        except httpx.RequestError as e:
+            logger.error(f"Request error while fetching master shot data by ID: {e}")
+            return {
+                "success": False,
+                "message": f"Request error: {str(e)}"
+            }
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error while fetching master shot data by ID: {e}")
+            return {
+                "success": False,
+                "message": f"HTTP error: {str(e)}"
+            }
+
+    @staticmethod
     def create_master_shot(data: dict) -> dict:
         """
         Create a new master shot in Kiyokai.

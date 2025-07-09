@@ -39,8 +39,9 @@ class OpenFilePlatform:
 
             elif system == "Darwin":  # macOS
                 # Let user pick app, then open file with it
+                safe_file_path = file_path.replace('"', '\\"')
                 applescript = f'''
-                    set theFile to POSIX file "{file_path}"
+                    set theFile to POSIX file "{safe_file_path}"
                     set theApp to choose application
                     do shell script "open -a \\"" & POSIX path of theApp & "\\" \\"" & POSIX path of theFile & "\\""
                 '''

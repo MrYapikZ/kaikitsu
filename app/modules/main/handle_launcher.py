@@ -1,10 +1,12 @@
 import os.path
 import sys
+import re
+import shutil
 
 from PyQt6.QtCore import Qt, QStringListModel
 from PyQt6.QtGui import QPixmap, QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtWidgets import QWidget, QTreeWidgetItem, QListWidgetItem, QPushButton, QHeaderView, QStyleOptionButton, \
-    QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox
+    QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox, QFileDialog
 
 from app.ui.main.page.launcher_ui import Ui_Form
 from app.core.app_states import AppState
@@ -18,6 +20,7 @@ from app.services.kiyokai import KiyokaiService
 from app.services.launcher.launcher_data import LauncherData
 from app.utils.open_file import OpenFilePlatform
 from app.utils.pyqt.text_wrap_delegate import TextWrapDelegate
+from app.utils.blender import BlenderService
 
 class LauncherHandler(QWidget):
     def __init__(self):
@@ -37,6 +40,7 @@ class LauncherHandler(QWidget):
         self.ui.pushButton_open.clicked.connect(self.on_open_file)
         self.ui.listWidget_versions.itemDoubleClicked.connect(self.on_version_item_double_clicked)
         self.ui.pushButton_commit.clicked.connect(self.on_commit_version)
+        self.ui.pushButton_push.clicked.connect(self.on_push_version)
 
     def show_question_popup(self,title: str , message: str) -> bool:
         app = QApplication.instance()
@@ -52,6 +56,38 @@ class LauncherHandler(QWidget):
         response = msg_box.exec()
 
         return response == QMessageBox.StandardButton.Yes
+
+    def show_version_action_popup(self, title: str, message: str) -> str:
+        """
+        Show a popup with three options:
+        - Open Latest
+        - Create New
+        - Cancel
+
+        Returns:
+            "open" | "create" | "cancel"
+        """
+        app = QApplication.instance()
+        if not app:
+            app = QApplication(sys.argv)
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+
+        open_btn = msg_box.addButton("Open Latest", QMessageBox.ButtonRole.AcceptRole)
+        create_btn = msg_box.addButton("Create New", QMessageBox.ButtonRole.DestructiveRole)
+        cancel_btn = msg_box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+
+        msg_box.exec()
+
+        if msg_box.clickedButton() == open_btn:
+            return "latest"
+        elif msg_box.clickedButton() == create_btn:
+            return "create"
+        else:
+            return "cancel"
 
 # PyQt Program =====================================================================================
 
@@ -103,7 +139,6 @@ class LauncherHandler(QWidget):
             "id": "ID",
             "file_name": "File Name",
             "file_path": "File Path",
-            "version_folder": "Version Folder",
             "project_name": "Project",
             "episode_name": "Episode",
             "sequence_name": "Sequence",
@@ -123,6 +158,11 @@ class LauncherHandler(QWidget):
                 "label": "Label",
                 "notes": "Notes",
                 "program": "Program",
+            }
+            field_map.update(additional_field_map)
+        else:
+            additional_field_map = {
+                "version_folder": "Version Folder",
             }
             field_map.update(additional_field_map)
 
@@ -180,6 +220,7 @@ class LauncherHandler(QWidget):
 
     def set_list_widget_versions(self, shot_id, task_id):
         """Set data for the list widget versions"""
+        self.ui.listWidget_versions.clear()
 
         if not task_id or not shot_id:
             print("[-] Please select Project, Task, and Shot to view versions.")
@@ -372,23 +413,7 @@ class LauncherHandler(QWidget):
 
     def on_open_file(self):
         """Open the selected file using an OS-specific file dialog."""
-        model = self.ui.tableView_metadataContent.model()
-
-        if not model:
-            print("[-] No metadata model available.")
-            return
-
-        file_path = None
-
-        for row in range(model.rowCount()):
-            key_index = model.index(row, 0)
-            value_index = model.index(row, 1)
-            key = model.data(key_index)
-            value = model.data(value_index)
-
-            if key == "File Path":
-                file_path = value
-                break  # found the value, stop searching
+        id, data, file_path = self.patch_version_data("open")
 
         if not file_path:
             print("[-] Missing file path.")
@@ -398,7 +423,33 @@ class LauncherHandler(QWidget):
             print(f"[-] File does not exist: {file_path}")
             return
 
-        OpenFilePlatform.open_file_with_dialog(file_path=file_path)
+        try:
+            # Fetch version shot data using the ID
+            version_shot_data = KiyokaiService().get_version_shot_by_version_id(id)
+            if not version_shot_data or not version_shot_data.get("success", False):
+                print(f"[-] Failed to open version shot data for ID: {id}")
+                action =  self.show_version_action_popup(    "Version Conflict","The selected version shot could not be updated.\n\nWhat would you like to do?")
+                if action == "latest":
+                    self.open_latest_version(id)
+                elif action == "create":
+                    self.create_new_version(id)
+                else:
+                    print(f"[-] Cancel to open version shot data for ID: {id}")
+                return
+            else:
+                # QMessageBox.information(self, "Success", "Version shot data fetched successfully.")
+                if not version_shot_data.get("data", {}).get("locked", False) and not version_shot_data.get("data", {}).get("commited", False):
+                    OpenFilePlatform.open_file_with_dialog(file_path=file_path)
+                    KiyokaiService().update_version_shot_by_version_id(id, data)
+                    print(f"[+] Opened file: {file_path}")
+                else:
+                    print(f"[-] Version shot data is locked or committed, cannot open file: {file_path}")
+                    QMessageBox.warning(self, "Warning", "This version is locked or committed and cannot be opened.")
+                    return
+        except Exception as e:
+            print(f"[-] Error fetching version shot data: {e}")
+            QMessageBox.critical(self, "Error", f"Select version to commit version: {str(e)}")
+            return
 
     def on_preview_open(self):
         """Pull master shot data and display in table view"""
@@ -468,36 +519,7 @@ class LauncherHandler(QWidget):
     def on_commit_version(self):
         """Commit the selected version"""
         try:
-            details_model = self.ui.tableView_metadataContent.model()
-            if not details_model:
-                print("[-] No details available. Please select a task first to populate details.")
-                return
-
-            # Extract task_id from details table
-            id = None
-            for row in range(details_model.rowCount()):
-                key_index = details_model.index(row, 0)
-                value_index = details_model.index(row, 1)
-                key = details_model.data(key_index)
-                value = details_model.data(value_index)
-
-                if key == "ID":
-                    id = value
-                    break
-
-            if not id:
-                print("[-] No Task ID found in details table")
-                return
-
-            data = {
-                "edit_user_id": AppState().user_data.get("user").get("id"),
-                "edit_user_name": AppState().user_data.get("user").get("full_name"),
-                "locked": False,
-                "locked_by_user_id": "",
-                "locked_by_user_name": "",
-                "label": self.ui.lineEdit_label.text(),
-                "notes": self.ui.textEdit_note.toPlainText(),
-            }
+            id, data, _ = self.patch_version_data("commit")
 
             try:
                 # Fetch version shot data using the ID
@@ -520,6 +542,33 @@ class LauncherHandler(QWidget):
             print(f"[-] Error committing version: {e}")
             # Optionally, you can show a message box to the user
             QMessageBox.critical(self, "Error", f"Failed to commit version: {str(e)}")
+
+    def on_push_version(self):
+        """Push the selected version"""
+        try:
+            id, data, _ = self.patch_version_data("push")
+
+            try:
+                # Fetch version shot data using the ID
+                version_shot_data = KiyokaiService().update_version_shot_by_version_id(id, data)
+                if not version_shot_data or not version_shot_data.get("success", False):
+                    print(f"[-] Failed to get version shot data for ID: {id}")
+                    return
+                else:
+                    QMessageBox.information(self, "Success", "Version shot data fetched successfully.")
+            except Exception as e:
+                print(f"[-] Error fetching version shot data: {e}")
+                QMessageBox.critical(self, "Error", f"Select version to push version: {str(e)}")
+                return
+
+            # Here you would typically push the version using the fetched data
+            # For demonstration, we will just print the data
+            print(f"[+] Pushing version for Version Shot ID: {self.master_shot_id}")
+
+        except Exception as e:
+            print(f"[-] Error pushing version: {e}")
+            # Optionally, you can show a message box to the user
+            QMessageBox.critical(self, "Error", f"Failed to push version: {str(e)}")
 
     def navigate_to_settings_with_data(self, project_id, task_id, episode_id, sequence_id, shot_id):
         """Navigate to Settings tab and populate it with quick pull data"""
@@ -611,3 +660,194 @@ class LauncherHandler(QWidget):
         except Exception as e:
             print(f"[-] Error populating Launcher form: {e}")
 
+# Small Function =====================================================================================
+    def patch_version_data(self, func_type):
+        details_model = self.ui.tableView_metadataContent.model()
+        if not details_model:
+            print("[-] No details available. Please select a task first to populate details.")
+            return
+
+        # Extract task_id from details table
+        id = None
+        file_path = None
+        for row in range(details_model.rowCount()):
+            key_index = details_model.index(row, 0)
+            value_index = details_model.index(row, 1)
+            key = details_model.data(key_index)
+            value = details_model.data(value_index)
+
+            if key == "ID":
+                id = value
+
+            if func_type == "open" and key == "File Path":
+                file_path = value
+
+        if not id:
+            print("[-] No Task ID found in details table")
+            return
+
+        data = {
+            "edit_user_id": AppState().user_data.get("user").get("id"),
+            "edit_user_name": AppState().user_data.get("user").get("full_name"),
+        }
+
+        if func_type == "open":
+            data["locked"] = True
+            data["locked_by_user_id"] = AppState().user_data.get("user").get("id")
+            data["locked_by_user_name"] = AppState().user_data.get("user").get("full_name")
+        elif func_type == "commit":
+            data["locked"] = False
+            data["locked_by_user_id"] = ""
+            data["locked_by_user_name"] = ""
+            data["label"] = self.ui.lineEdit_label.text()
+            data["notes"] = self.ui.textEdit_note.toPlainText()
+        elif func_type == "push":
+            data["locked"] = False
+            data["locked_by_user_id"] = ""
+            data["locked_by_user_name"] = ""
+            data["label"] = self.ui.lineEdit_label.text()
+            data["notes"] = self.ui.textEdit_note.toPlainText()
+            data["commited"] = True
+
+        return id, data, file_path
+
+    def open_latest_version(self, mastershot_id):
+        """Open the latest version of the master shot"""
+        try:
+            # Fetch the latest version shot data
+            master_shot = KiyokaiService().get_master_shot_by_master_shot_id(mastershot_id)
+
+            if not master_shot or not master_shot.get("success", False):
+                print(f"[-] Failed to get mastershot data for MasterShot ID: {mastershot_id}")
+                return
+
+            master_shot_data = master_shot.get("data", {})
+            if not master_shot_data:
+                print(f"[-] No version shot data found for MasterShot ID: {mastershot_id}")
+                return
+
+            latest_version = KiyokaiService().get_version_shot_by_version_id(master_shot_data.get("latest_version_shot").get("id"))
+            file_path = latest_version.get("data").get("file_path", "")
+
+            if not file_path or not os.path.exists(file_path):
+                print(f"[-] File does not exist: {file_path}")
+                return
+
+            update_data = {
+                "edit_user_id": AppState().user_data.get("user").get("id"),
+                "edit_user_name": AppState().user_data.get("user").get("full_name"),
+                "locked": True,
+                "locked_by_user_id": AppState().user_data.get("user").get("id"),
+                "locked_by_user_name": AppState().user_data.get("user").get("full_name"),
+            }
+
+
+            if not master_shot_data.get("latest_version_shot").get("locked", False) and not master_shot_data.get("latest_version_shot").get("commited", False):
+                OpenFilePlatform.open_file_with_dialog(file_path=file_path)
+                KiyokaiService().update_version_shot_by_version_id(master_shot_data.get("latest_version_shot").get("id"), update_data)
+                print(f"[+] Opened latest version shot: {file_path}")
+            else:
+                print(f"[-] Latest version shot is locked or not committed: {file_path}")
+                QMessageBox.warning(self, "Warning", "This version is locked or committed and cannot be opened.")
+
+        except Exception as e:
+            print(f"[-] Error opening latest version shot: {e}")
+
+    def create_new_version(self, mastershot_id):
+        """Create a new version for the master shot"""
+        try:
+            # Fetch the master shot data
+            master_shot = KiyokaiService().get_master_shot_by_master_shot_id(mastershot_id)
+
+            if not master_shot or not master_shot.get("success", False):
+                print(f"[-] Failed to get mastershot data for MasterShot ID: {mastershot_id}")
+                return
+
+            master_shot_data = master_shot.get("data", {})
+            if not master_shot_data:
+                print(f"[-] No master shot data found for MasterShot ID: {mastershot_id}")
+                return
+
+
+            original_file_name = master_shot_data.get("file_name", "")
+            master_file_path = master_shot_data.get("file_path", "")
+            latest_version_shot = master_shot_data.get("latest_version_shot")
+            latest_version = (
+                latest_version_shot.get("version_number")
+                if latest_version_shot and latest_version_shot.get("version_number") is not None
+                else 0
+            )
+            version_str = f"{latest_version:03d}"
+
+            new_file_name = re.sub(r'(_[^_]+)(\.\w+)$', rf'_v{version_str}\2', original_file_name)
+            file_ext = os.path.splitext(original_file_name)[1].lower()
+
+            version_folder = master_shot_data.get("version_folder")
+            if not version_folder:
+                base_folder = master_file_path
+                version_folder = os.path.join(base_folder, "versions")
+
+            if not os.path.exists(version_folder):
+                os.makedirs(version_folder, exist_ok=True)
+
+            version_file_path = os.path.join(version_folder, new_file_name)
+
+            if file_ext == ".blend":
+                # Ask user to locate Blender executable
+                blender_path, _ = QFileDialog.getOpenFileName(
+                    self, "Select Blender Executable", "", "Blender Executable (*.exe *.app *.bin)"
+                )
+                if not blender_path:
+                    QMessageBox.warning(self, "Missing Blender", "Blender executable not selected.")
+                    return
+                if blender_path.endswith(".app"):
+                    blender_path = os.path.join(blender_path, "Contents", "MacOS", "Blender")
+                blender_save_as = BlenderService().save_as_blend_file(blender_path, master_file_path, version_file_path)
+                if blender_save_as.get("success", True):
+                    print(f"[+] Blender project saved as: {version_file_path}")
+                else:
+                    print(f"[-] Failed to save Blender project: {blender_save_as.get('message', 'Unknown error')}")
+                    QMessageBox.warning(self, "Warning", "Failed to save Blender project.")
+                    return
+            else:
+                shutil.copy2(master_file_path, version_file_path)
+                print(f"[+] File copied to: {version_file_path}")
+
+            new_version_data = {
+                "file_name": new_file_name,
+                "file_path": version_file_path,
+                "edit_user_id": AppState().user_data.get("user").get("id"),
+                "edit_user_name": AppState().user_data.get("user").get("full_name"),
+                "master_shot_id": mastershot_id,
+                "project_id": master_shot_data.get("project_id"),
+                "project_name": master_shot_data.get("project_name"),
+                "episode_id": master_shot_data.get("episode_id"),
+                "episode_name": master_shot_data.get("episode_name"),
+                "sequence_id": master_shot_data.get("sequence_id"),
+                "sequence_name": master_shot_data.get("sequence_name"),
+                "shot_id": master_shot_data.get("shot_id"),
+                "shot_name": master_shot_data.get("shot_name"),
+                "task_id": master_shot_data.get("task_id"),
+                "task_name": master_shot_data.get("task_name"),
+            }
+
+            new_version = KiyokaiService().create_version_shot(new_version_data)
+            if not new_version or not new_version.get("success", False):
+                print(f"[-] Failed to create new version shot for MasterShot ID: {mastershot_id}")
+                return
+
+            print(f"[+] Created new version shot successfully: {new_version.get('data').get('id')}")
+
+            update_data = {
+                "edit_user_id": AppState().user_data.get("user").get("id"),
+                "edit_user_name": AppState().user_data.get("user").get("full_name"),
+                "locked": True,
+                "locked_by_user_id": AppState().user_data.get("user").get("id"),
+                "locked_by_user_name": AppState().user_data.get("user").get("full_name"),
+            }
+            OpenFilePlatform.open_file_with_dialog(file_path=version_file_path)
+            KiyokaiService().update_version_shot_by_version_id(new_version.get("data").get("id"), update_data)
+            print(f"[+] Opened latest version shot: {version_file_path}")
+
+        except Exception as e:
+            print(f"[-] Error creating new version shot: {e}")
