@@ -54,20 +54,19 @@ class OpenFilePlatform:
 
             elif system == "Linux":
                 try:
-                    process = subprocess.Popen(["xdg-open", file_path])
-                    process.wait()
-                    print("[!] Blender has closed.")
+                    subprocess.run(["xdg-open", file_path], check=True)
                 except subprocess.CalledProcessError:
                     print("[!] xdg-open failed. Trying Blender from Steam...")
 
                     blender_path = SelectBlenderService().select_blender()
 
-                    if os.path.exists(blender_path):
+                    if blender_path and os.path.exists(blender_path):
+                        print(f"[+] Launching Blender: {blender_path}")
                         process = subprocess.Popen([blender_path, file_path])
                         process.wait()
-                        print("[!] Blender has closed.")
+                        print("[+] Blender has closed.")
                     else:
-                        print("[!] Blender not found in Steam folder.")
+                        print("[!] No valid Blender path selected.")
 
             else:
                 print(f"[!] Unsupported platform: {system}")
