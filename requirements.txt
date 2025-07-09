@@ -1,3 +1,5 @@
-PyQt6
-opencv-python
-requests
+PyQt6~=6.8.1
+gazu~=0.10.34
+requests~=2.32.3
+python-multipart~=0.0.20
+httpx~=0.28.1
